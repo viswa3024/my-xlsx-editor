@@ -69,3 +69,34 @@ const handleDownloadAllJSON = () => {
     Download All JSON
   </button>
 </div>
+
+
+
+const handleDownloadStyledXLSX = () => {
+  if (sheets.length === 0) return;
+
+  const workbook = XLSX.utils.book_new();
+
+  sheets.forEach((sheet) => {
+    const ws = XLSX.utils.aoa_to_sheet(sheet.data);
+
+    // Apply merges
+    if (sheet.merges.length > 0) ws["!merges"] = sheet.merges;
+
+    // Apply header style (row 1)
+    const headers = sheet.data[0];
+    headers.forEach((_, cIdx) => {
+      const cellAddress = XLSX.utils.encode_cell({ r: 0, c: cIdx });
+      if (!ws[cellAddress]) ws[cellAddress] = { t: "s", v: headers[cIdx] };
+      ws[cellAddress].s = {
+        font: { bold: true, color: { rgb: "FFFFFFFF" } }, // white font
+        fill: { fgColor: { rgb: "FF1F77B4" } }, // blue background
+        alignment: { horizontal: "center", vertical: "center" },
+      };
+    });
+
+    XLSX.utils.book_append_sheet(workbook, ws, sheet.name);
+  });
+
+  XLSX.writeFile(workbook, "Edited_Styled_Sheets.xlsx");
+};
