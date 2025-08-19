@@ -175,3 +175,12 @@ const handleDownloadStyledXLSX = async () => {
   link.setAttribute("download", "Edited_Styled_Sheets.xlsx");
   link.click();
 };
+
+
+const headerValue = sheetJson[headerName]?.[rIdx - 1];
+
+// For Response Plan default
+const responseValue =
+  headerName === "Response Plan"
+    ? headerValue?.toString().toUpperCase() || "FALSE"
+    : headerValue ?? "";
