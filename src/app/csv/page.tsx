@@ -14,7 +14,6 @@ export default function Home() {
   const [sheetJson, setSheetJson] = useState<Record<string, any[]>>({});
   const [editingRow, setEditingRow] = useState<number | null>(null);
   const [tempRowData, setTempRowData] = useState<Record<string, any>>({});
-  const [fileUrl, setFileUrl] = useState("");
 
   const editableColumns = ["Product line", "Gender", "Payment", "Customer type", "Branch", "Unit price"];
 
@@ -44,63 +43,6 @@ export default function Home() {
     };
     reader.readAsText(file);
   };
-
-   const handleLoadUrlbkp = async () => {
-  if (!fileUrl) return;
-
-  try {
-    const res = await fetch(`/api/fetch-csv?url=${encodeURIComponent(fileUrl)}`);
-    if (!res.ok) throw new Error("Failed to fetch CSV");
-    const text = await res.text();
-
-    const workbook = XLSX.read(text, { type: "string" });
-    const sheetsData: SheetData[] = workbook.SheetNames.map((name) => {
-        const ws = workbook.Sheets[name];
-        const data = XLSX.utils.sheet_to_json(ws, { header: 1 }) as (string | number)[][];
-        return { name, data };
-      });
-    setSheets(sheetsData);
-    setActiveSheet(0);
-  } catch (err) {
-    console.error("Error loading CSV:", err);
-  }
-};
-
-const handleLoadUrl = async () => {
-  debugger
-  if (!fileUrl) return;
-  try {
-    // const response = await fetch(fileUrl);
-    // if (!response.ok) throw new Error("Failed to fetch CSV");
-    // const csvText = await response.text();
-
-    const res = await fetch(`/api/fetch-csv?url=${encodeURIComponent(fileUrl)}`);
-    if (!res.ok) {
-      alert("Failed to load file from URL");
-      return;
-    }
-
-    const csvText = await res.text();
-
-    // Parse CSV into workbook
-    const workbook = XLSX.read(csvText, { type: "string" });
-    const sheetName = workbook.SheetNames[0];
-    const ws = workbook.Sheets[sheetName];
-
-    const data: (string | number)[][] = XLSX.utils.sheet_to_json(ws, {
-      header: 1,
-      blankrows: true,
-    }) as any;
-
-    const sheetData: SheetData[] = [{ name: fileUrl.split("/").pop() || "Sheet1", data }];
-    setSheets(sheetData);
-    setActiveSheet(0);
-
-    convertSheetToJson(sheetData[0]);
-  } catch (error) {
-    console.error("Error loading CSV from URL:", error);
-  }
-};
 
   const convertSheetToJson = (sheet: SheetData) => {
     const [headers, ...rows] = sheet.data;
@@ -182,24 +124,6 @@ const handleLoadUrl = async () => {
       <h1 className="text-2xl font-bold mb-4">📊 CSV Editor (Editable Risk Columns with Row Edit)</h1>
 
       <input type="file" accept=".csv" onChange={handleFileUpload} className="mb-4" />
-
-      <br />
-
-      <div className="mb-4 flex gap-2">
-        <input
-          type="text"
-          placeholder="Enter CSV file URL"
-          value={fileUrl}
-          onChange={(e) => setFileUrl(e.target.value)}
-          className="border p-2 rounded w-full"
-        />
-        <button
-          onClick={handleLoadUrl}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          Load
-        </button>
-      </div>
 
       {sheets.length > 0 && (
         <>
