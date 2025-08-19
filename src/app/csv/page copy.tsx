@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import * as XLSX from "xlsx";
-import ExcelJS from "exceljs";
-import { saveAs } from "file-saver";
 
 type SheetData = {
   name: string;
@@ -179,154 +177,6 @@ const handleLoadUrl = async () => {
     setTempRowData({});
   };
 
-
-  const handleDownload = () => {
-    const wb = XLSX.utils.book_new();
-    sheets.forEach((sheet) => {
-      const ws = XLSX.utils.aoa_to_sheet(sheet.data);
-      XLSX.utils.book_append_sheet(wb, ws, sheet.name);
-    });
-    XLSX.writeFile(wb, "edited.xlsx");
-  };
-
-  const handleDownloadStyledXLSXbkp = async () => {
-    if (sheets.length === 0) return;
-
-    const workbook = new ExcelJS.Workbook();
-
-    sheets.forEach((sheet) => {
-      const ws = workbook.addWorksheet(sheet.name);
-
-      ws.properties.defaultRowHeight = 50;
-
-      sheet.data.forEach((row, rowIndex) => {
-        const newRow = ws.addRow(row);
-        newRow.height = 50;
-
-        row.forEach((_, colIndex) => {
-          const cell = newRow.getCell(colIndex + 1);
-          cell.alignment = { vertical: "middle", horizontal: "center" };
-          cell.font = { size: 12, name: "Arial" };
-          cell.border = {
-            top: { style: "thin" },
-            left: { style: "thin" },
-            bottom: { style: "thin" },
-            right: { style: "thin" },
-          };
-        });
-      });
-    });
-
-    const buf = await workbook.xlsx.writeBuffer();
-    saveAs(new Blob([buf]), "styled_edited.xlsx");
-  };
-
-
-  const handleDownloadStyledXLSX = async () => {
-  if (sheets.length === 0) return;
-
-  const workbook = new ExcelJS.Workbook();
-
-  sheets.forEach((sheet) => {
-    const ws = workbook.addWorksheet(sheet.name);
-
-    // default row height for the whole sheet
-    ws.properties.defaultRowHeight = 50;
-
-    // 👉 Find max columns count
-    const maxCols = Math.max(...sheet.data.map((row) => row.length));
-
-    // Add rows with padding
-    sheet.data.forEach((row) => {
-      const normalizedRow = [...row];
-      while (normalizedRow.length < maxCols) {
-        normalizedRow.push(""); // pad empty cells
-      }
-      const addedRow = ws.addRow(normalizedRow);
-
-      // 👉 Apply wrap text for all row cells
-      addedRow.eachCell((cell) => {
-        cell.alignment = { vertical: "middle", horizontal: "left", wrapText: true };
-      });
-    });
-
-    // Apply header styles
-    ws.getRow(1).eachCell((cell) => {
-      cell.font = { bold: true, color: { argb: "FFFFFFFF" } }; // white font
-      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1F77B4" } }; // blue background
-      cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
-    });
-
-    // 👉 Header row height
-    ws.getRow(1).height = 50;
-
-    // 👉 Column widths
-    ws.columns = new Array(maxCols).fill({ width: 25 });
-
-    // 👉 Conditional formatting for "Probability" column
-    const headers = sheet.data[0];
-    const probabilityIndex = headers.findIndex(
-      (h) => typeof h === "string" && h.toLowerCase() === "branch"
-    );
-    if (probabilityIndex !== -1) {
-      ws.getColumn(probabilityIndex + 1).eachCell((cell, rowNumber) => {
-        if (rowNumber === 1) return; // skip header
-        const val = (cell.value || "").toString().toUpperCase();
-        if (val === "A") {
-          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFF0000" } }; // red
-          cell.font = { color: { argb: "FFFFFFFF" } }; // white text
-        } else if (val === "B") {
-          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFFF00" } }; // yellow
-          cell.font = { color: { argb: "FF000000" } }; // black text
-        } else if (val === "C") {
-          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF00FF00" } }; // green
-          cell.font = { color: { argb: "FF000000" } }; // black text
-        }
-      });
-    }
-
-    // 👉 Conditional formatting for "Impact" column
-    const impactIndex = headers.findIndex(
-      (h) => typeof h === "string" && h.toLowerCase() === "gender"
-    );
-    if (impactIndex !== -1) {
-      ws.getColumn(impactIndex + 1).eachCell((cell, rowNumber) => {
-        if (rowNumber === 1) return; // skip header
-        const val = (cell.value || "").toString().toUpperCase();
-        if (val === "FEMALE") {
-          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFF0000" } }; // red
-          cell.font = { color: { argb: "FFFFFFFF" } }; // white text
-        } else if (val === "MALE") {
-          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFFF00" } }; // yellow
-          cell.font = { color: { argb: "FF000000" } }; // black text
-        }
-      });
-    }
-
-    // Apply merges (ExcelJS is 1-indexed)
-    if ((sheet as any).merges) {
-      (sheet as any).merges.forEach((merge: any) => {
-        const startRow = merge.s.r + 1;
-        const startCol = merge.s.c + 1;
-        const endRow = merge.e.r + 1;
-        const endCol = merge.e.c + 1;
-        ws.mergeCells(startRow, startCol, endRow, endCol);
-      });
-    }
-  });
-
-  // Generate XLSX blob
-  const buffer = await workbook.xlsx.writeBuffer();
-  const blob = new Blob([buffer], {
-    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.setAttribute("download", "Edited_Styled_Sheets.xlsx");
-  link.click();
-};
-
-
   return (
     <main className="p-6">
       <h1 className="text-2xl font-bold mb-4">📊 CSV Editor (Editable Risk Columns with Row Edit)</h1>
@@ -493,19 +343,6 @@ const handleLoadUrl = async () => {
             >
               Download All JSON
             </button>
-
-             <button
-            className="mt-4 px-4 py-2 bg-green-600 text-white rounded"
-            onClick={handleDownload}
-          >
-            Download Edited XLSX
-          </button>
-          <button
-            className="mt-4 ml-4 px-4 py-2 bg-green-600 text-white rounded"
-            onClick={handleDownloadStyledXLSX}
-          >
-            Download Styled Edited XLSX
-          </button>
           </div>
         </>
       )}
