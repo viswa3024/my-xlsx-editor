@@ -80,26 +80,36 @@ export default function Home() {
               <tbody>
                 {sheets[activeSheet].data.map((row, rIdx) => {
                   const isHeader = rIdx === 0;
-                  // Determine Risk Title column index from header row
                   const riskColIndex = isHeader ? row.findIndex((col) => col === "Risk Title") : -1;
 
-                  let originalCol = 0; // track original column index in data
+                  // Track which cells have been rendered to skip merged duplicates
+                  const renderedCells: Set<string> = new Set();
 
                   return (
                     <tr key={rIdx}>
                       {row.map((cell, cIdx) => {
+                        // Skip if this cell is already rendered due to merge
+                        if (renderedCells.has(`${rIdx}-${cIdx}`)) return null;
+
                         const merged = isMergedCell(rIdx, cIdx, sheets[activeSheet].merges);
-                        if (merged && !merged.topLeft) {
-                          originalCol++; // still count for merged cells
-                          return null; // skip rendering merged cells
+                        let rowSpan = 1;
+                        let colSpan = 1;
+
+                        if (merged && merged.topLeft && merged.merge) {
+                          rowSpan = merged.merge.e.r - merged.merge.s.r + 1;
+                          colSpan = merged.merge.e.c - merged.merge.s.c + 1;
+
+                          // Mark all cells in this merged range as rendered
+                          for (let r = merged.merge.s.r; r <= merged.merge.e.r; r++) {
+                            for (let c = merged.merge.s.c; c <= merged.merge.e.c; c++) {
+                              renderedCells.add(`${r}-${c}`);
+                            }
+                          }
                         }
 
-                        const rowSpan = merged?.merge ? merged.merge.e.r - merged.merge.s.r + 1 : 1;
-                        const colSpan = merged?.merge ? merged.merge.e.c - merged.merge.s.c + 1 : 1;
+                        const isEditable = !isHeader && cIdx === riskColIndex;
 
-                        const isEditable = !isHeader && originalCol === riskColIndex;
-
-                        const td = (
+                        return (
                           <td
                             key={cIdx}
                             className={`border p-1 text-center ${isHeader ? "bg-gray-200 font-bold" : ""}`}
@@ -114,7 +124,7 @@ export default function Home() {
                                 onChange={(e) => {
                                   const newVal = e.target.value;
                                   const updatedSheets = [...sheets];
-                                  updatedSheets[activeSheet].data[rIdx][originalCol] = newVal;
+                                  updatedSheets[activeSheet].data[rIdx][cIdx] = newVal;
                                   setSheets(updatedSheets);
                                 }}
                               />
@@ -123,9 +133,6 @@ export default function Home() {
                             )}
                           </td>
                         );
-
-                        originalCol++; // increment original column after rendering
-                        return td;
                       })}
                     </tr>
                   );
