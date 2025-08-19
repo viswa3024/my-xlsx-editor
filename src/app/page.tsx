@@ -180,7 +180,7 @@ const handleLoadUrl = async () => {
   };
 
 
-  const handleDownload = () => {
+  const handleDownloadbkp = () => {
     const wb = XLSX.utils.book_new();
     sheets.forEach((sheet) => {
       const ws = XLSX.utils.aoa_to_sheet(sheet.data);
@@ -188,6 +188,98 @@ const handleLoadUrl = async () => {
     });
     XLSX.writeFile(wb, "edited.xlsx");
   };
+
+  const handleDownload = () => {
+  const wb = XLSX.utils.book_new();
+
+  sheets.forEach((sheet) => {
+    // Add Project Title & Description on top
+    const projectTitle = ["Project Title:", "AI-based Generative QA System"];
+    const projectDescription = ["Project Description:", "Fine-tuned models for QA and email subject generation"];
+
+    // Combine title, description, and actual sheet data
+    const newData = [projectTitle, projectDescription, [], ...sheet.data];
+
+    const ws = XLSX.utils.aoa_to_sheet(newData);
+    XLSX.utils.book_append_sheet(wb, ws, sheet.name);
+  });
+
+  XLSX.writeFile(wb, "edited.xlsx");
+};
+
+const handleDownloadbkp2 = () => {
+  const wb = XLSX.utils.book_new();
+  sheets.forEach((sheet) => {
+    // Add Project Title and Description
+    const dataWithMeta = [
+      ["Project Title", "", "", "", ""],
+      ["Project Description", "", "", "", ""],
+      ...sheet.data,
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(dataWithMeta);
+
+    // Merge cells for Project Title (first row across 5 columns)
+    ws["!merges"] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }, // Merge A1:E1
+      { s: { r: 1, c: 0 }, e: { r: 1, c: 4 } }, // Merge A2:E2
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, sheet.name);
+  });
+  XLSX.writeFile(wb, "edited.xlsx");
+};
+
+const handleDownloadbkp4 = () => {
+  const wb = XLSX.utils.book_new();
+
+  sheets.forEach((sheet) => {
+    const ws = XLSX.utils.aoa_to_sheet([
+      ["AI-based Generative QA System"], // Project Title
+      ["Fine-tuned models for QA and email subject generation"], // Project Description
+      [],
+      ...sheet.data,
+    ]);
+
+    // Find number of columns to merge title row properly
+    const colCount = Math.max(...sheet.data.map((r) => r.length));
+
+    if (!ws["!merges"]) ws["!merges"] = [];
+
+    ws["!merges"].push({
+      s: { r: 0, c: 0 }, // start cell
+      e: { r: 0, c: colCount - 1 }, // end cell
+    });
+
+    XLSX.utils.book_append_sheet(wb, ws, sheet.name);
+  });
+
+  XLSX.writeFile(wb, "edited.xlsx");
+};
+
+
+const handleDownloadbkp1 = () => {
+  const wb = XLSX.utils.book_new();
+  sheets.forEach((sheet) => {
+    const ws = XLSX.utils.aoa_to_sheet([]);
+
+    // project title row with 2-colspan
+    XLSX.utils.sheet_add_aoa(ws, [["Project Title:", "AI-based Generative QA System"]], { origin: "A1" });
+    ws["!merges"] = ws["!merges"] || [];
+    ws["!merges"].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 1 } }); // merge A1:B1
+
+    // project description row with 2-colspan
+    XLSX.utils.sheet_add_aoa(ws, [["Project Description:", "Fine-tuned models for QA and email subject generation"]], { origin: "A2" });
+    ws["!merges"].push({ s: { r: 1, c: 0 }, e: { r: 1, c: 1 } }); // merge A2:B2
+
+    // push actual sheet data starting from row 4
+    XLSX.utils.sheet_add_aoa(ws, sheet.data, { origin: "A4" });
+
+    XLSX.utils.book_append_sheet(wb, ws, sheet.name);
+  });
+  XLSX.writeFile(wb, "edited.xlsx");
+};
+
 
   const handleDownloadStyledXLSXbkp = async () => {
     if (sheets.length === 0) return;
@@ -222,7 +314,7 @@ const handleLoadUrl = async () => {
   };
 
 
-  const handleDownloadStyledXLSX = async () => {
+  const handleDownloadStyledXLSXbkp1 = async () => {
   if (sheets.length === 0) return;
 
   const workbook = new ExcelJS.Workbook();
@@ -325,6 +417,130 @@ const handleLoadUrl = async () => {
   link.setAttribute("download", "Edited_Styled_Sheets.xlsx");
   link.click();
 };
+
+
+const handleDownloadStyledXLSX = async () => {
+  if (sheets.length === 0) return;
+
+  const workbook = new ExcelJS.Workbook();
+
+  sheets.forEach((sheet) => {
+    const ws = workbook.addWorksheet(sheet.name);
+
+    // 👉 Project Title
+    ws.addRow([`Project Title: My Sample Project`]);
+    ws.mergeCells(1, 1, 1, 5);
+    ws.getRow(1).font = { bold: true, size: 16, color: { argb: "FF000000" } };
+    ws.getRow(1).alignment = { vertical: "middle", horizontal: "center" };
+    ws.getRow(1).height = 30;
+
+    // 👉 Project Description
+    ws.addRow([`Project Description: This is a demo project description text`]);
+    ws.mergeCells(2, 1, 2, 5);
+    ws.getRow(2).font = { italic: true, size: 12, color: { argb: "FF333333" } };
+    ws.getRow(2).alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+    ws.getRow(2).height = 40;
+
+    // Add an empty spacer row
+    ws.addRow([]);
+
+    // default row height for the whole sheet
+    ws.properties.defaultRowHeight = 50;
+
+    // 👉 Find max columns count
+    const maxCols = Math.max(...sheet.data.map((row) => row.length));
+
+    // Add rows with padding
+    sheet.data.forEach((row) => {
+      const normalizedRow = [...row];
+      while (normalizedRow.length < maxCols) {
+        normalizedRow.push(""); // pad empty cells
+      }
+      const addedRow = ws.addRow(normalizedRow);
+
+      // 👉 Apply wrap text for all row cells
+      addedRow.eachCell((cell) => {
+        cell.alignment = { vertical: "middle", horizontal: "left", wrapText: true };
+      });
+    });
+
+    // Apply header styles (row 4 because title+description+spacer used 3 rows)
+    const headerRowIndex = 4;
+    ws.getRow(headerRowIndex).eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: "FFFFFFFF" } }; // white font
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1F77B4" } }; // blue background
+      cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+    });
+
+    // 👉 Header row height
+    ws.getRow(headerRowIndex).height = 50;
+
+    // 👉 Column widths
+    ws.columns = new Array(maxCols).fill({ width: 25 });
+
+    // 👉 Conditional formatting for "Branch" column
+    const headers = sheet.data[0];
+    const probabilityIndex = headers.findIndex(
+      (h) => typeof h === "string" && h.toLowerCase() === "branch"
+    );
+    if (probabilityIndex !== -1) {
+      ws.getColumn(probabilityIndex + 1).eachCell((cell, rowNumber) => {
+        if (rowNumber === headerRowIndex) return; // skip header
+        const val = (cell.value || "").toString().toUpperCase();
+        if (val === "A") {
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFF0000" } };
+          cell.font = { color: { argb: "FFFFFFFF" } };
+        } else if (val === "B") {
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFFF00" } };
+          cell.font = { color: { argb: "FF000000" } };
+        } else if (val === "C") {
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF00FF00" } };
+          cell.font = { color: { argb: "FF000000" } };
+        }
+      });
+    }
+
+    // 👉 Conditional formatting for "Gender" column
+    const impactIndex = headers.findIndex(
+      (h) => typeof h === "string" && h.toLowerCase() === "gender"
+    );
+    if (impactIndex !== -1) {
+      ws.getColumn(impactIndex + 1).eachCell((cell, rowNumber) => {
+        if (rowNumber === headerRowIndex) return; // skip header
+        const val = (cell.value || "").toString().toUpperCase();
+        if (val === "FEMALE") {
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFF0000" } };
+          cell.font = { color: { argb: "FFFFFFFF" } };
+        } else if (val === "MALE") {
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFFF00" } };
+          cell.font = { color: { argb: "FF000000" } };
+        }
+      });
+    }
+
+    // Apply merges (ExcelJS is 1-indexed)
+    if ((sheet as any).merges) {
+      (sheet as any).merges.forEach((merge: any) => {
+        const startRow = merge.s.r + 4; // shift merges because of 3 extra rows
+        const startCol = merge.s.c + 1;
+        const endRow = merge.e.r + 4;
+        const endCol = merge.e.c + 1;
+        ws.mergeCells(startRow, startCol, endRow, endCol);
+      });
+    }
+  });
+
+  // Generate XLSX blob
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.setAttribute("download", "Edited_Styled_Sheets.xlsx");
+  link.click();
+};
+
 
 
   return (
