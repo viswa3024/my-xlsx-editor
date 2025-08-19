@@ -177,10 +177,53 @@ const handleDownloadStyledXLSX = async () => {
 };
 
 
-const headerValue = sheetJson[headerName]?.[rIdx - 1];
+import ExcelJS from "exceljs";
 
-// For Response Plan default
-const responseValue =
-  headerName === "Response Plan"
-    ? headerValue?.toString().toUpperCase() || "FALSE"
-    : headerValue ?? "";
+const handleDownloadStyledXLSX = async () => {
+  if (sheets.length === 0) return;
+
+  const workbook = new ExcelJS.Workbook();
+
+  sheets.forEach((sheet) => {
+    const ws = workbook.addWorksheet(sheet.name);
+
+    // 👉 Find max columns count
+    const maxCols = Math.max(...sheet.data.map((row) => row.length));
+
+    // Add rows with padding
+    sheet.data.forEach((row) => {
+      const normalizedRow = [...row];
+      while (normalizedRow.length < maxCols) {
+        normalizedRow.push(""); // pad empty cells
+      }
+      ws.addRow(normalizedRow);
+    });
+
+    // Apply header styles
+    ws.getRow(1).eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: "FFFFFFFF" } }; // white font
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1F77B4" } }; // blue background
+      cell.alignment = { vertical: "middle", horizontal: "center" };
+    });
+
+    // Apply merges (ExcelJS is 1-indexed)
+    sheet.merges.forEach((merge) => {
+      const startRow = merge.s.r + 1;
+      const startCol = merge.s.c + 1;
+      const endRow = merge.e.r + 1;
+      const endCol = merge.e.c + 1;
+      ws.mergeCells(startRow, startCol, endRow, endCol);
+    });
+  });
+
+  // Generate XLSX blob
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.setAttribute("download", "Edited_Styled_Sheets.xlsx");
+  link.click();
+};
+
