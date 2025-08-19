@@ -506,3 +506,109 @@ const handleDownloadStyledXLSX = async () => {
   link.click();
 };
 
+
+
+const handleDownloadStyledXLSX = async () => {
+  if (sheets.length === 0) return;
+
+  const workbook = new ExcelJS.Workbook();
+
+  sheets.forEach((sheet) => {
+    const ws = workbook.addWorksheet(sheet.name);
+
+    // default row height for the whole sheet
+    ws.properties.defaultRowHeight = 60;
+
+    // 👉 Find max columns count
+    const maxCols = Math.max(...sheet.data.map((row) => row.length));
+
+    // Add rows with padding
+    sheet.data.forEach((row) => {
+      const normalizedRow = [...row];
+      while (normalizedRow.length < maxCols) {
+        normalizedRow.push(""); // pad empty cells
+      }
+      const addedRow = ws.addRow(normalizedRow);
+
+      // 👉 Apply wrap text for all row cells
+      addedRow.eachCell((cell) => {
+        cell.alignment = { vertical: "middle", horizontal: "left", wrapText: true };
+      });
+    });
+
+    // Apply header styles
+    ws.getRow(1).eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: "FFFFFFFF" } }; // white font
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1F77B4" } }; // blue background
+      cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+    });
+
+    // 👉 Header row height
+    ws.getRow(1).height = 60;
+
+    // 👉 Column widths
+    ws.columns = new Array(maxCols).fill({ width: 25 });
+
+    // 👉 Conditional formatting for "Probability" column
+    const headers = sheet.data[0];
+    const probabilityIndex = headers.findIndex(
+      (h) => typeof h === "string" && h.toLowerCase() === "probability"
+    );
+    if (probabilityIndex !== -1) {
+      ws.getColumn(probabilityIndex + 1).eachCell((cell, rowNumber) => {
+        if (rowNumber === 1) return; // skip header
+        const val = (cell.value || "").toString().toUpperCase();
+        if (val === "HIGH") {
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFF0000" } }; // red
+          cell.font = { color: { argb: "FFFFFFFF" } }; // white text
+        } else if (val === "MEDIUM") {
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFFF00" } }; // yellow
+          cell.font = { color: { argb: "FF000000" } }; // black text
+        } else if (val === "LOW") {
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF00FF00" } }; // green
+          cell.font = { color: { argb: "FF000000" } }; // black text
+        }
+      });
+    }
+
+    // 👉 Conditional formatting for "Impact" column
+    const impactIndex = headers.findIndex(
+      (h) => typeof h === "string" && h.toLowerCase() === "impact"
+    );
+    if (impactIndex !== -1) {
+      ws.getColumn(impactIndex + 1).eachCell((cell, rowNumber) => {
+        if (rowNumber === 1) return; // skip header
+        const val = (cell.value || "").toString().toUpperCase();
+        if (val === "HIGH") {
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFF0000" } }; // red
+          cell.font = { color: { argb: "FFFFFFFF" } }; // white text
+        } else if (val === "MEDIUM") {
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFFF00" } }; // yellow
+          cell.font = { color: { argb: "FF000000" } }; // black text
+        } else if (val === "LOW") {
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF00FF00" } }; // green
+          cell.font = { color: { argb: "FF000000" } }; // black text
+        }
+      });
+    }
+
+    // Apply merges (ExcelJS is 1-indexed)
+    sheet.merges.forEach((merge) => {
+      const startRow = merge.s.r + 1;
+      const startCol = merge.s.c + 1;
+      const endRow = merge.e.r + 1;
+      const endCol = merge.e.c + 1;
+      ws.mergeCells(startRow, startCol, endRow, endCol);
+    });
+  });
+
+  // Generate XLSX blob
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.setAttribute("download", "Edited_Styled_Sheets.xlsx");
+  link.click();
+};
