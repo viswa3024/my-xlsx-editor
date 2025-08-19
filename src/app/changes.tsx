@@ -134,3 +134,44 @@ const handleDownloadStyledXLSX = async () => {
   link.setAttribute("download", "Edited_Styled_Sheets.xlsx");
   link.click();
 };
+
+
+
+import ExcelJS from "exceljs";
+
+const handleDownloadStyledXLSX = async () => {
+  if (sheets.length === 0) return;
+
+  const workbook = new ExcelJS.Workbook();
+
+  sheets.forEach((sheet) => {
+    const ws = workbook.addWorksheet(sheet.name);
+
+    // Add rows
+    sheet.data.forEach((row) => ws.addRow(row));
+
+    // Apply header styles
+    ws.getRow(1).eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: "FFFFFFFF" } }; // white font
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1F77B4" } }; // blue background
+      cell.alignment = { vertical: "middle", horizontal: "center" };
+    });
+
+    // Apply merges
+    sheet.merges.forEach((merge) => {
+      const startRow = merge.s.r + 1; // ExcelJS is 1-indexed
+      const startCol = merge.s.c + 1;
+      const endRow = merge.e.r + 1;
+      const endCol = merge.e.c + 1;
+      ws.mergeCells(startRow, startCol, endRow, endCol);
+    });
+  });
+
+  // Generate XLSX blob
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.setAttribute("download", "Edited_Styled_Sheets.xlsx");
+  link.click();
+};
