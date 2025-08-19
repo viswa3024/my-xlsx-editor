@@ -54,28 +54,13 @@ export default function Home() {
 };
 
   // Handle cell edit
-  const handleEditBkp = (row: number, col: number, value: string) => {
+  const handleEdit = (row: number, col: number, value: string) => {
     setSheets((prev) => {
       const newSheets = [...prev];
       newSheets[activeSheet].data[row][col] = value;
       return newSheets;
     });
   };
-
-  // rowIndex: number, key: string, value: string | number
-const handleEdit = (rowIndex: number, key: string, value: string | number) => {
-  if (!activeJsonData) return;
-
-  // Clone the specific column array
-  const updatedData = { ...activeJsonData };
-  updatedData[key] = [...updatedData[key]];
-
-  // Update the cell
-  updatedData[key][rowIndex] = value;
-
-  // Update state
-  setActiveJsonData(updatedData);
-};
 
   // Export current sheet to CSV
   const exportToCSV = () => {
@@ -332,7 +317,7 @@ const downloadSheetsAsColumnJSONFiles = () => {
                       <td key={cIdx} className="border p-1">
                         <input
                           value={cell}
-                          onChange={(e) => handleEditBkp(rIdx, cIdx, e.target.value)}
+                          onChange={(e) => handleEdit(rIdx, cIdx, e.target.value)}
                           className="w-full border-none outline-none p-1"
                         />
                       </td>
@@ -344,7 +329,7 @@ const downloadSheetsAsColumnJSONFiles = () => {
           </div>
           <br />
 
-          {/* {activeJsonData && (
+          {activeJsonData && (
   <div className="mt-6 overflow-auto border rounded-lg">
     <table className="border-collapse w-full text-sm">
       <thead>
@@ -367,260 +352,7 @@ const downloadSheetsAsColumnJSONFiles = () => {
       </tbody>
     </table>
   </div>
-)} */}
-
-
-{/* {activeJsonData && (
-  <div className="mt-6 overflow-auto border rounded-lg">
-    <table className="border-collapse w-full text-sm">
-      <thead>
-        <tr>
-          {Object.keys(activeJsonData).map((key) => (
-            <th key={key} className="border p-2 bg-gray-100">
-              {key}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {Array.from(
-          { length: Object.values(activeJsonData)[0].length },
-          (_, rowIndex) => (
-            <tr key={rowIndex}>
-              {Object.keys(activeJsonData).map((key) => (
-                <td key={key} className="border p-2">
-                  <input
-                    type="text"
-                    value={activeJsonData[key][rowIndex]}
-                    onChange={(e) => {
-                      const updated = { ...activeJsonData };
-                      updated[key] = [...updated[key]];
-                      updated[key][rowIndex] = e.target.value;
-                      setActiveJsonData(updated);
-                    }}
-                    className="w-full border-none focus:ring-0 focus:outline-none"
-                  />
-                </td>
-              ))}
-            </tr>
-          )
-        )}
-      </tbody>
-    </table>
-
-    <div className="mt-4 flex justify-end">
-      <button
-        onClick={() => {
-          console.log("Updated Data:", activeJsonData);
-          alert("Data saved successfully!");
-        }}
-        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-      >
-        Save
-      </button>
-    </div>
-  </div>
-)} */}
-
-
-{/* {activeJsonData && (
-  <div className="mt-6 overflow-auto border rounded-lg">
-    <table className="border-collapse w-full text-sm">
-      <thead>
-        <tr>
-          {Object.keys(activeJsonData).map((key) => (
-            <th key={key} className="border px-4 py-2">{key}</th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {Array.from({ length: Object.values(activeJsonData)[0].length }).map((_, rowIndex) => (
-          <tr key={rowIndex}>
-            {Object.keys(activeJsonData).map((key) => (
-              <td key={key} className="border px-4 py-2">
-                <input
-                  type="text"
-                  value={activeJsonData[key][rowIndex]}
-                  onChange={(e) => {
-                    const newData = { ...activeJsonData };
-                    newData[key][rowIndex] = e.target.value;
-                    setActiveJsonData(newData);
-                  }}
-                  className="w-full p-1 border rounded"
-                />
-              </td>
-            ))}
-          </tr>
-        ))}
-      </tbody>
-    </table>
-
-   
-    <div className="mt-4 flex gap-4">
-    
-      <button
-        onClick={() => {
-          const blob = new Blob(
-            [JSON.stringify(activeJsonData, null, 2)],
-            { type: "application/json" }
-          );
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = "data.json";
-          a.click();
-        }}
-        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-      >
-        Save as JSON
-      </button>
-
-    
-      <button
-        onClick={() => {
-          const keys = Object.keys(activeJsonData);
-          const rows = Array.from({ length: activeJsonData[keys[0]].length }).map((_, rowIndex) =>
-            keys.map((key) => activeJsonData[key][rowIndex]).join(",")
-          );
-          const csvContent = [keys.join(","), ...rows].join("\n");
-
-          const blob = new Blob([csvContent], { type: "text/csv" });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = "data.csv";
-          a.click();
-        }}
-        className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-      >
-        Save as CSV
-      </button>
-    </div>
-  </div>
-)} */}
-
-{activeJsonData && Object.keys(activeJsonData).length > 0 && (
-  <div className="mt-6 overflow-auto border rounded-lg">
-    <table className="border-collapse w-full text-sm">
-      <thead>
-        <tr>
-          {Object.keys(activeJsonData).map((key) => (
-            <th key={key} className="border p-2 bg-gray-100 text-left">
-              {key}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {Array.from({ length: Object.values(activeJsonData)[0].length }).map(
-          (_, rowIndex) => (
-            <tr key={rowIndex}>
-              {Object.keys(activeJsonData).map((key) => (
-                <td key={key} className="border p-2">
-                  {key === "Gender" ? (
-                    <select
-                      className="border p-1 rounded"
-                      value={activeJsonData[key][rowIndex]}
-                      onChange={(e) =>
-                        handleEdit(rowIndex, key, e.target.value)
-                      }
-                    >
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                    </select>
-                  ) : key === "Rating" ? (
-                    <input
-                      type="number"
-                      className="border p-1 rounded w-full"
-                      value={activeJsonData[key][rowIndex]}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (/^\d*$/.test(val) && Number(val) <= 100) {
-                          handleEdit(rowIndex, key, val);
-                        }
-                      }}
-                    />
-                  ) : key === "Unit price" ? (
-                    <input
-                      type="number"
-                      className="border p-1 rounded w-full"
-                      value={activeJsonData[key][rowIndex]}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (/^\d*$/.test(val)) {
-                          handleEdit(rowIndex, key, val);
-                        }
-                      }}
-                    />
-                  ) : key === "Product line" ? (
-                    <textarea
-                      className="border p-1 rounded w-full"
-                      value={activeJsonData[key][rowIndex]}
-                      onChange={(e) =>
-                        handleEdit(rowIndex, key, e.target.value)
-                      }
-                    />
-                  ) : (
-                    <input
-                      type="text"
-                      className="border p-1 rounded w-full"
-                      value={activeJsonData[key][rowIndex]}
-                      onChange={(e) =>
-                        handleEdit(rowIndex, key, e.target.value)
-                      }
-                    />
-                  )}
-                </td>
-              ))}
-            </tr>
-          )
-        )}
-      </tbody>
-    </table>
-
-     <div className="mt-4 flex gap-4">
-    
-      <button
-        onClick={() => {
-          const blob = new Blob(
-            [JSON.stringify(activeJsonData, null, 2)],
-            { type: "application/json" }
-          );
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = "data.json";
-          a.click();
-        }}
-        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-      >
-        Save as JSON
-      </button>
-
-    
-      <button
-        onClick={() => {
-          const keys = Object.keys(activeJsonData);
-          const rows = Array.from({ length: activeJsonData[keys[0]].length }).map((_, rowIndex) =>
-            keys.map((key) => activeJsonData[key][rowIndex]).join(",")
-          );
-          const csvContent = [keys.join(","), ...rows].join("\n");
-
-          const blob = new Blob([csvContent], { type: "text/csv" });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = "data.csv";
-          a.click();
-        }}
-        className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-      >
-        Save as CSV
-      </button>
-    </div>
-  </div>
 )}
-
 
           <br />
 
