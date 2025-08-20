@@ -631,6 +631,9 @@ ws.mergeCells(spacerRow.number, 1, spacerRow.number, maxCols);
                   return (
                     <tr key={rIdx}>
                       {row.map((cell, cIdx) => {
+
+                        const headerName = headers[cIdx] as string;
+                        if (headerName === "Payment") return null; // Skip Payment for now
                         if (renderedCells.has(`${rIdx}-${cIdx}`)) return null;
 
                         const merged = getMergedCell(rIdx, cIdx, sheets[activeSheet].merges);
@@ -649,7 +652,6 @@ ws.mergeCells(spacerRow.number, 1, spacerRow.number, maxCols);
                           return null;
                         }
 
-                        const headerName = headers[cIdx] as string;
                         const isEditable = !isHeader && editableColumns.includes(headerName);
                         const inEditMode = editingRow === rIdx;
 
@@ -720,6 +722,30 @@ ws.mergeCells(spacerRow.number, 1, spacerRow.number, maxCols);
                           </td>
                         );
                       })}
+
+                      {/* Render Payment column at the end */}
+                      {(() => {
+                        const paymentIndex = headers.findIndex((h) => h === "Payment");
+                        if (paymentIndex === -1) return null;
+                        const cell = row[paymentIndex];
+                        const merged = getMergedCell(rIdx, paymentIndex, sheets[activeSheet].merges);
+                        let rowSpan = 1;
+                        let colSpan = 1;
+                        if (merged && merged.topLeft) {
+                          rowSpan = merged.rowSpan ?? 1;
+                          colSpan = merged.colSpan ?? 1;
+                        }
+                        return (
+                          <td
+                            key="payment"
+                            className={`border p-1 text-center ${isHeader ? "bg-gray-200 font-bold" : ""}`}
+                            rowSpan={rowSpan}
+                            colSpan={colSpan}
+                          >
+                            {cell}
+                          </td>
+                        );
+                      })()}
 
                       {/* Last column: Edit Changes */}
                       <td className={`border p-1 text-center ${isHeader ? "bg-gray-200 font-bold" : ""}`}>
