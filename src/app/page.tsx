@@ -643,8 +643,54 @@ const handleDownloadStyledXLSX = async () => {
       });
     }
 
-    // 👉 Spacer row before project info
-    ws.addRow([]);
+    // // 👉 Spacer row before project info
+    // ws.addRow([]);
+
+    // // 👉 Spacer row before project info
+    // const spacerRow = ws.addRow([]);
+    // spacerRow.eachCell((cell, colNumber) => {
+    //   cell.fill = {
+    //     type: "pattern",
+    //     pattern: "solid",
+    //     fgColor: { argb: "FF1F77B4" }, // Blue background
+    //   };
+    // });
+    // // ensure spacer row spans all columns with background
+    // ws.mergeCells(spacerRow.number, 1, spacerRow.number, maxCols);
+
+    // add spacer row with background
+// const spacerRow = ws.addRow(new Array(maxCols).fill("")); // create empty cells
+
+// spacerRow.height = 40;
+
+// spacerRow.eachCell((cell) => {
+//   cell.fill = {
+//     type: "pattern",
+//     pattern: "solid",
+//     fgColor: { argb: "FF1F77B4" }, // Blue background
+//   };
+// });
+
+// // merge across all columns
+// ws.mergeCells(spacerRow.number, 1, spacerRow.number, maxCols);
+
+const spacerRow = ws.addRow([]);
+
+// set row height = 40
+spacerRow.height = 20;
+
+// apply blue background to all cells in the row
+for (let i = 1; i <= maxCols; i++) {
+  const cell = spacerRow.getCell(i);
+  cell.fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: "FF1F77B4" }, // Blue background
+  };
+}
+
+// ensure spacer row spans all columns (even though it's empty)
+ws.mergeCells(spacerRow.number, 1, spacerRow.number, maxCols);
 
     const titleRowIndex = (ws.lastRow ? ws.lastRow.number : 0) + 1;
     console.log("titleRowIndex: ", titleRowIndex);
