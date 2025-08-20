@@ -4,6 +4,7 @@ import { useState } from "react";
 import * as XLSX from "xlsx";
 import ExcelJS from "exceljs";
 import { CreditCard, Save, Edit, X } from "lucide-react";  
+import CustomSelect from "./CustomSelect";
 
 type SheetData = {
   name: string;
@@ -831,17 +832,33 @@ const headerWidths: Record<string, string> = {
                                   }
                                 />
                               ) : headerName === "Customer type" ? (
-                                <select
-                                  className="w-full p-2 border border-gray-300 rounded-md bg-white text-gray-700 shadow-sm 
-                                    focus:outline-none focus:ring-0  transition cursor-pointer"
-                                  value={tempRowData[headerName] ?? "Member"}
-                                  onChange={(e) =>
-                                    setTempRowData((prev) => ({ ...prev, [headerName]: e.target.value }))
-                                  }
-                                >
-                                  <option value="Member">Member</option>
-                                  <option value="Normal">Normal</option>
-                                </select>
+                                // <select
+                                //   className="w-full p-2 border border-gray-300 rounded-md bg-white text-gray-700 shadow-sm 
+                                //     focus:outline-none focus:ring-0  transition cursor-pointer"
+                                //   value={tempRowData[headerName] ?? "Member"}
+                                //   onChange={(e) =>
+                                //     setTempRowData((prev) => ({ ...prev, [headerName]: e.target.value }))
+                                //   }
+                                // >
+                                //   <option value="Member">Member</option>
+                                //   <option value="Normal">Normal</option>
+                                // </select>
+
+                                // <CustomSelect
+                                //     value={tempRowData[headerName] ?? "Member"}
+                                //     options={["Member", "Normal"]}
+                                //     onChange={(val) =>
+                                //       setTempRowData((prev) => ({ ...prev, [headerName]: val }))
+                                //     }
+                                //   />
+                                <CustomSelect
+                                    value={tempRowData[headerName] ?? "Member"}
+                                    options={[
+                                      { key: "Member", label: "Member" },
+                                      { key: "Normal", label: "Normal" },
+                                    ]}
+                                    onChange={(val) => setTempRowData((prev) => ({ ...prev, [headerName]: val }))}
+                                  />
                               ) : headerName === "Quantity" ? (
                                   <input
                                     type="number"
