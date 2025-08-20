@@ -644,8 +644,8 @@ const getBranchColor = (value: string) => {
             ))}
           </div>
 
-          <div className="overflow-auto border rounded-lg">
-            <table className="border-collapse w-full">
+          <div className="overflow-auto shadow-lg p-4 bg-white">
+            <table className="min-w-full border-collapse">
               <tbody>
                 {sheets[activeSheet].data.map((row, rIdx) => {
                   const isHeader = rIdx === 0;
@@ -653,7 +653,9 @@ const getBranchColor = (value: string) => {
                   const renderedCells: Set<string> = new Set();
 
                   return (
-                    <tr key={rIdx}>
+                    <tr key={rIdx} 
+                      //className={`${!isHeader && rIdx % 2 === 0 ? "bg-white" : "bg-gray-50"} hover:bg-gray-100 transition-colors`}
+                    >
                       {row.map((cell, cIdx) => {
 
                         const headerName = headers[cIdx] as string;
@@ -684,7 +686,9 @@ const getBranchColor = (value: string) => {
                         return (
                           <td
                             key={cIdx}
-                            className={`border p-1 text-center ${isHeader ? "bg-gray-200 font-bold" : ""}`}
+                            //className={`border p-1 text-center ${isHeader ? "bg-gray-200 font-bold" : "border-b hover:bg-gray-50"}`}
+
+                            className={`border border-[#ddd] p-1 text-center ${isHeader ? "bg-gray-200 font-bold" : ""}`}
                             rowSpan={rowSpan}
                             colSpan={colSpan}
                           >
@@ -794,7 +798,7 @@ const getBranchColor = (value: string) => {
                         return (
                           <td
                             key="payment"
-                            className={`border p-1 text-center ${isHeader ? "bg-gray-200 font-bold" : ""}`}
+                            className={`border border-[#ddd] p-1 text-center ${isHeader ? "bg-gray-200 font-bold" : ""}`}
                             rowSpan={rowSpan}
                             colSpan={colSpan}
                           >
@@ -811,7 +815,7 @@ const getBranchColor = (value: string) => {
                       })()}
 
                       {/* Last column: Edit Changes */}
-                      <td className={`border p-1 text-center ${isHeader ? "bg-gray-200 font-bold" : ""}`}>
+                      <td className={`border border-[#ddd] p-1 text-center ${isHeader ? "bg-gray-200 font-bold" : ""}`}>
                         {isHeader
                           ? "Edit Changes"
                           : editingRow === rIdx ? (
