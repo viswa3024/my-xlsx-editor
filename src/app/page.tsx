@@ -552,11 +552,20 @@ const handleDownloadStyledXLSX = async () => {
     // default row height for the whole sheet
     ws.properties.defaultRowHeight = 50;
 
+    // 👉 Remove "Rating" column from sheet data
+    const ratingIndex = sheet.data[0].findIndex(
+      (h) => typeof h === "string" && h.toLowerCase() === "rating"
+    );
+    const filteredData =
+      ratingIndex !== -1
+        ? sheet.data.map((row) => row.filter((_, idx) => idx !== ratingIndex))
+        : sheet.data;
+
     // 👉 Find max columns count
-    const maxCols = Math.max(...sheet.data.map((row) => row.length));
+    const maxCols = Math.max(...filteredData.map((row) => row.length));
 
     // Add rows with padding (main data first)
-    sheet.data.forEach((row) => {
+    filteredData.forEach((row) => {
       const normalizedRow = [...row];
       while (normalizedRow.length < maxCols) {
         normalizedRow.push(""); // pad empty cells
@@ -584,7 +593,7 @@ const handleDownloadStyledXLSX = async () => {
     ws.columns = new Array(maxCols).fill({ width: 25 });
 
     // 👉 Conditional formatting for "Branch" column
-    const headers = sheet.data[0];
+    const headers = filteredData[0];
     const probabilityIndex = headers.findIndex(
       (h) => typeof h === "string" && h.toLowerCase() === "branch"
     );
@@ -636,29 +645,6 @@ const handleDownloadStyledXLSX = async () => {
 
     // 👉 Spacer row before project info
     ws.addRow([]);
-
-    // // 👉 Project Title (after data)
-    // //const titleRowIndex = ws.lastRow.number + 1;
-    // const titleRowIndex = (ws.lastRow ? ws.lastRow.number : 0) + 1;
-    // console.log("titleRowIndex: ", titleRowIndex)
-    // ws.addRow([`Project Title: AI-based Generative QA System`]);
-    // ws.mergeCells(titleRowIndex, 1, titleRowIndex, maxCols);
-    // ws.getRow(titleRowIndex).font = { bold: true, size: 16, color: { argb: "FF000000" } };
-    // ws.getRow(titleRowIndex).alignment = { vertical: "middle", horizontal: "left" };
-    // ws.getRow(titleRowIndex).height = 30;
-
-    // // 👉 Project Description (after data)
-    // //const descRowIndex = ws.lastRow.number + 1;
-
-    // const descRowIndex = (ws.lastRow ? ws.lastRow.number : 0) + 1;
-
-    // console.log("descRowIndex: ", descRowIndex);
-    // ws.addRow([`Project Description: Fine-tuned models for QA and email subject generation`]);
-    // ws.mergeCells(descRowIndex, 1, descRowIndex, maxCols);
-    // ws.getRow(descRowIndex).font = { italic: true, size: 12, color: { argb: "FF333333" } };
-    // ws.getRow(descRowIndex).alignment = { vertical: "middle", horizontal: "left", wrapText: true };
-    // ws.getRow(descRowIndex).height = 40;
-
 
     const titleRowIndex = (ws.lastRow ? ws.lastRow.number : 0) + 1;
     console.log("titleRowIndex: ", titleRowIndex);
