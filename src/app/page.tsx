@@ -574,6 +574,14 @@ ws.mergeCells(spacerRow.number, 1, spacerRow.number, maxCols);
   link.click();
 };
 
+const formatHeader = (header: string) => {
+  // Replace underscores with space
+  let str = header.replace(/_/g, " ");
+  // Capitalize first letter of each word
+  str = str.replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+  return str;
+};
+
   return (
     <main className="p-6">
       <h1 className="text-2xl font-bold mb-4">XLSX Editor</h1>
@@ -656,6 +664,8 @@ ws.mergeCells(spacerRow.number, 1, spacerRow.number, maxCols);
                         const isEditable = !isHeader && editableColumns.includes(headerName);
                         const inEditMode = editingRow === rIdx;
 
+                        const displayHeader = isHeader ? formatHeader(headerName) : cell;
+
                         return (
                           <td
                             key={cIdx}
@@ -664,7 +674,7 @@ ws.mergeCells(spacerRow.number, 1, spacerRow.number, maxCols);
                             colSpan={colSpan}
                           >
                             {isHeader ? (
-                              cell
+                              displayHeader
                             ) : inEditMode && isEditable ? (
                               headerName === "Unit price" ? (
                                 <input
