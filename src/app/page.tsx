@@ -34,7 +34,7 @@ export default function Home() {
 
       const sheetData: SheetData[] = workbook.SheetNames.map((name) => {
         const ws = workbook.Sheets[name];
-        const data: (string | number)[][] = XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: true }) as any;
+        const data: (string | number)[][] = XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: true, raw: false }) as any;
         const merges: XLSX.Range[] = ws["!merges"] || [];
         return { name, data, merges };
       });
@@ -72,7 +72,8 @@ export default function Home() {
 
       const sheetData: SheetData[] = workbook.SheetNames.map((name) => {
         const ws = workbook.Sheets[name];
-        const data: (string | number)[][] = XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: true }) as any;
+        //raw: false in sheet_to_json, XLSX will automatically try to parse dates into human-readable form.
+        const data: (string | number)[][] = XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: true, raw: false }) as any;
         const merges: XLSX.Range[] = ws["!merges"] || [];
         return { name, data, merges };
       });
@@ -597,6 +598,24 @@ const getBranchColor = (value: string) => {
   }
 };
 
+const headerWidths: Record<string, string> = {
+  "Invoice ID": "150px",
+  "Branch": "120px",
+  "Customer type": "100px",
+  "Gender": "130px",
+  "Product line": "200px",
+  "Unit price": "120px",
+  "Quantity": "120px",
+  "Tax 5%": "120px",
+  "Total": "120px",
+  "Date": "120px",
+  "Time": "120px",
+  "Payment": "120px",
+  "cogs": "120px",
+  "gross income": "120px",
+  "Rating": "120px",
+};
+
   return (
     <main className="p-6">
       <h1 className="text-2xl font-bold mb-4">XLSX Editor</h1>
@@ -691,6 +710,9 @@ const getBranchColor = (value: string) => {
                             className={`border border-[#ddd] p-1 text-center ${isHeader ? "bg-gray-200 font-bold" : ""}`}
                             rowSpan={rowSpan}
                             colSpan={colSpan}
+                            style={{
+                              width: headerWidths[cell as string] || "auto", // fallback if header not in map
+                            }}
                           >
                             {isHeader ? (
                               displayHeader
@@ -774,6 +796,14 @@ const getBranchColor = (value: string) => {
                                       {cell}
                                     </div>
                                   </div>
+                              ) : headerName.toLowerCase() === "product line" ? (
+                                // ✅ Non-editable Product Line with ellipsis & hover tooltip
+                                <div
+                                  className="font-bold text-[14px] line-clamp-3 overflow-hidden text-ellipsis cursor-pointer"
+                                  title={String(cell)} // shows full text on hover
+                                >
+                                  {cell}
+                                </div>
                               ) : (
                               // ✅ Non-editable rows wrapped in div with bold and font-size 14px
                               <div className="font-bold text-[14px]">{cell}</div>
