@@ -582,21 +582,6 @@ const formatHeader = (header: string) => {
   return str;
 };
 
-const getBranchColor = (value: string) => {
-  switch (value) {
-    case "A":
-      return "bg-red-500 text-white";
-    case "B":
-      return "bg-orange-400 text-white";
-    case "C":
-      return "bg-green-500 text-white";
-    case "D":
-      return "bg-red-800 text-white";
-    default:
-      return "";
-  }
-};
-
   return (
     <main className="p-6">
       <h1 className="text-2xl font-bold mb-4">XLSX Editor</h1>
@@ -742,39 +727,9 @@ const getBranchColor = (value: string) => {
                               ) : (
                                 cell
                               )
-                            ) :
-                            // ✅ Non-editable rows wrapped
-                            (
-                              headerName.toLowerCase() === "gender" ? (
-                              <div className="flex justify-center items-center h-full w-full">
-                                <div
-                                  className={`flex justify-center items-center 
-                                              text-[14px] tracking-[0.1px] w-[90px] pt-[4px] pb-[4px] 
-                                              font-bold rounded-[6px] ${
-                                                cell === "Male"
-                                                  ? "text-green-600 bg-green-100"
-                                                  : cell === "Female"
-                                                  ? "text-red-600 bg-red-100"
-                                                  : "text-black bg-gray-100"
-                                              }`}
-                                >
-                                  {cell}
-                                </div>
-                              </div>
-                            ) :
-                              headerName.toLowerCase() === "branch" ? (
-                                  <div className="flex justify-center items-center h-full w-full">
-                                    <div className={`flex justify-center items-center text-[14px] 
-                                                    tracking-[0.1px] w-[40px] pt-[4px] pb-[4px] font-bold rounded-[6px] 
-                                                    ${getBranchColor(cell as string)} `}>
-                                      {cell}
-                                    </div>
-                                  </div>
-                              ) : (
-                              // ✅ Non-editable rows wrapped in div with bold and font-size 14px
-                              <div className="font-bold text-[14px]">{cell}</div>
-                            )
-                          )}
+                            ) : (
+                              cell
+                            )}
                           </td>
                         );
                       })}
