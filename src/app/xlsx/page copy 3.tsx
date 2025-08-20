@@ -18,9 +18,9 @@ export default function Home() {
   const [tempRowData, setTempRowData] = useState<Record<string, any>>({});
   const [fileUrl, setFileUrl] = useState<string>("");
 
-  const [editableColumns, setEditableColumns] = useState<string[]>(["Product line", "Unit price", "Customer type", "City", "Gender", "Quantity"])
+  const [editableColumns, setEditableColumns] = useState<string[]>(["Product line", "Risk Description", "Probability", "Impact", "Response Plan"])
 
-  const masterEditableColumns = ["Product line", "Unit price", "Customer type", "City", "Gender", "Quantity"];
+  const masterEditableColumns = ["Product line", "Risk Description", "Probability", "Impact", "Response Plan"];
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -663,7 +663,7 @@ ws.mergeCells(spacerRow.number, 1, spacerRow.number, maxCols);
                             {isHeader ? (
                               cell
                             ) : inEditMode && isEditable ? (
-                              headerName === "Unit price" ? (
+                              headerName === "Product line" ? (
                                 <input
                                   type="text"
                                   className="w-full border-none p-1 focus:outline-none text-center"
@@ -672,7 +672,7 @@ ws.mergeCells(spacerRow.number, 1, spacerRow.number, maxCols);
                                     setTempRowData((prev) => ({ ...prev, [headerName]: e.target.value }))
                                   }
                                 />
-                              ) : headerName === "Product line" || headerName === "City" ? (
+                              ) : headerName === "Risk Description" ? (
                                 <textarea
                                   className="w-full border-none p-1 focus:outline-none"
                                   value={tempRowData[headerName] ?? ""}
@@ -680,36 +680,27 @@ ws.mergeCells(spacerRow.number, 1, spacerRow.number, maxCols);
                                     setTempRowData((prev) => ({ ...prev, [headerName]: e.target.value }))
                                   }
                                 />
-                              ) : headerName === "Customer type" ? (
+                              ) : headerName === "Probability" || headerName === "Impact" ? (
                                 <select
                                   className="w-full border-none p-1 focus:outline-none"
-                                  value={tempRowData[headerName] ?? "Member"}
+                                  value={tempRowData[headerName] ?? "Low"}
                                   onChange={(e) =>
                                     setTempRowData((prev) => ({ ...prev, [headerName]: e.target.value }))
                                   }
                                 >
-                                  <option value="Member">Member</option>
-                                  <option value="Normal">Normal</option>
+                                  <option value="High">High</option>
+                                  <option value="Low">Low</option>
                                 </select>
-                              ) : headerName === "Quantity" ? (
-                                  <input
-                                    type="number"
-                                    className="w-full border-none p-1 focus:outline-none text-center"
-                                    value={tempRowData[headerName] ?? ""}
-                                    onChange={(e) =>
-                                      setTempRowData((prev) => ({ ...prev, [headerName]: e.target.value }))
-                                    }
-                                  />
-                              ) : headerName === "Gender" ? (
+                              ) : headerName === "Response Plan" ? (
                                 <select
                                   className="w-full border-none p-1 focus:outline-none"
-                                  value={tempRowData[headerName] ?? "Female"}
+                                  value={tempRowData[headerName] ?? "FALSE"}
                                   onChange={(e) =>
                                     setTempRowData((prev) => ({ ...prev, [headerName]: e.target.value }))
                                   }
                                 >
-                                  <option value="Female">Female</option>
-                                  <option value="Male">Male</option>
+                                  <option value="TRUE">TRUE</option>
+                                  <option value="FALSE">FALSE</option>
                                 </select>
                               ) : (
                                 cell

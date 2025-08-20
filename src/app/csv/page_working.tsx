@@ -3,11 +3,11 @@
 import { useState } from "react";
 import * as XLSX from "xlsx";
 import ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
 
 type SheetData = {
   name: string;
   data: (string | number)[][];
-  merges: XLSX.Range[];
 };
 
 export default function Home() {
@@ -16,11 +16,9 @@ export default function Home() {
   const [sheetJson, setSheetJson] = useState<Record<string, any[]>>({});
   const [editingRow, setEditingRow] = useState<number | null>(null);
   const [tempRowData, setTempRowData] = useState<Record<string, any>>({});
-  const [fileUrl, setFileUrl] = useState<string>("");
+  const [fileUrl, setFileUrl] = useState("");
 
-  const [editableColumns, setEditableColumns] = useState<string[]>(["Product line", "Unit price", "Customer type", "City", "Gender", "Quantity"])
-
-  const masterEditableColumns = ["Product line", "Unit price", "Customer type", "City", "Gender", "Quantity"];
+  const editableColumns = ["Product line", "Gender", "Payment", "Customer type", "Branch", "Unit price"];
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -28,66 +26,83 @@ export default function Home() {
 
     const reader = new FileReader();
     reader.onload = (evt) => {
-      const bstr = evt.target?.result;
-      const workbook = XLSX.read(bstr, { type: "binary" });
+      const csvText = evt.target?.result as string;
 
-      const sheetData: SheetData[] = workbook.SheetNames.map((name) => {
-        const ws = workbook.Sheets[name];
-        const data: (string | number)[][] = XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: true }) as any;
-        const merges: XLSX.Range[] = ws["!merges"] || [];
-        return { name, data, merges };
-      });
+      // Parse CSV into workbook
+      const workbook = XLSX.read(csvText, { type: "string" });
+      const sheetName = workbook.SheetNames[0];
+      const ws = workbook.Sheets[sheetName];
 
+      const data: (string | number)[][] = XLSX.utils.sheet_to_json(ws, {
+        header: 1,
+        blankrows: true,
+      }) as any;
+
+      const sheetData: SheetData[] = [{ name: file.name.replace(".csv", ""), data }];
       setSheets(sheetData);
       setActiveSheet(0);
-       const headers = sheetData[0].data[0];
-      const validEditableColumns = masterEditableColumns.filter((col) => headers.includes(col));
-      setEditableColumns(validEditableColumns);
 
       convertSheetToJson(sheetData[0]);
     };
-    reader.readAsBinaryString(file);
+    reader.readAsText(file);
   };
 
-  const handleLoadUrl = async () => {
-    if (!fileUrl) return;
-    try {
-      // const res = await fetch(fileUrl);
-      // const arrayBuffer = await res.arrayBuffer();
-      // const workbook = XLSX.read(arrayBuffer, { type: "array" });
+   const handleLoadUrlbkp = async () => {
+  if (!fileUrl) return;
 
-       const response = await fetch("/api/load-xlsx", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ url: fileUrl }),
-          });
-       
-      
-         
-         
-        const result = await response.json();
-        const data = new Uint8Array(result.data);
-        const workbook = XLSX.read(data, { type: "array" });
+  try {
+    const res = await fetch(`/api/fetch-csv?url=${encodeURIComponent(fileUrl)}`);
+    if (!res.ok) throw new Error("Failed to fetch CSV");
+    const text = await res.text();
 
-      const sheetData: SheetData[] = workbook.SheetNames.map((name) => {
+    const workbook = XLSX.read(text, { type: "string" });
+    const sheetsData: SheetData[] = workbook.SheetNames.map((name) => {
         const ws = workbook.Sheets[name];
-        const data: (string | number)[][] = XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: true }) as any;
-        const merges: XLSX.Range[] = ws["!merges"] || [];
-        return { name, data, merges };
+        const data = XLSX.utils.sheet_to_json(ws, { header: 1 }) as (string | number)[][];
+        return { name, data };
       });
+    setSheets(sheetsData);
+    setActiveSheet(0);
+  } catch (err) {
+    console.error("Error loading CSV:", err);
+  }
+};
 
-      setSheets(sheetData);
-      setActiveSheet(0);
-      const headers = sheetData[0].data[0];
-      const validEditableColumns = masterEditableColumns.filter((col) => headers.includes(col));
-      setEditableColumns(validEditableColumns);
+const handleLoadUrl = async () => {
+  debugger
+  if (!fileUrl) return;
+  try {
+    // const response = await fetch(fileUrl);
+    // if (!response.ok) throw new Error("Failed to fetch CSV");
+    // const csvText = await response.text();
 
-      convertSheetToJson(sheetData[0]);
-    } catch (err) {
-      console.error("Failed to load XLSX from URL:", err);
+    const res = await fetch(`/api/fetch-csv?url=${encodeURIComponent(fileUrl)}`);
+    if (!res.ok) {
+      alert("Failed to load file from URL");
+      return;
     }
-  };
-  
+
+    const csvText = await res.text();
+
+    // Parse CSV into workbook
+    const workbook = XLSX.read(csvText, { type: "string" });
+    const sheetName = workbook.SheetNames[0];
+    const ws = workbook.Sheets[sheetName];
+
+    const data: (string | number)[][] = XLSX.utils.sheet_to_json(ws, {
+      header: 1,
+      blankrows: true,
+    }) as any;
+
+    const sheetData: SheetData[] = [{ name: fileUrl.split("/").pop() || "Sheet1", data }];
+    setSheets(sheetData);
+    setActiveSheet(0);
+
+    convertSheetToJson(sheetData[0]);
+  } catch (error) {
+    console.error("Error loading CSV from URL:", error);
+  }
+};
 
   const convertSheetToJson = (sheet: SheetData) => {
     const [headers, ...rows] = sheet.data;
@@ -105,17 +120,6 @@ export default function Home() {
     const newJson = { ...sheetJson };
     newJson[header][rowIndex] = value;
     setSheetJson(newJson);
-  };
-
-  const getMergedCell = (r: number, c: number, merges: XLSX.Range[]) => {
-    for (const merge of merges) {
-      const { s, e } = merge;
-      if (r >= s.r && r <= e.r && c >= s.c && c <= e.c) {
-        if (r === s.r && c === s.c) return { topLeft: true, rowSpan: e.r - s.r + 1, colSpan: e.c - s.c + 1 };
-        return { topLeft: false };
-      }
-    }
-    return null;
   };
 
   const handleDownloadAllCSV = () => {
@@ -175,20 +179,17 @@ export default function Home() {
     setTempRowData({});
   };
 
+
   const handleDownloadbkp = () => {
-  if (sheets.length === 0) return;
+    const wb = XLSX.utils.book_new();
+    sheets.forEach((sheet) => {
+      const ws = XLSX.utils.aoa_to_sheet(sheet.data);
+      XLSX.utils.book_append_sheet(wb, ws, sheet.name);
+    });
+    XLSX.writeFile(wb, "edited.xlsx");
+  };
 
-  const workbook = XLSX.utils.book_new();
-  sheets.forEach((sheet) => {
-    const ws = XLSX.utils.aoa_to_sheet(sheet.data);
-    if (sheet.merges.length > 0) ws["!merges"] = sheet.merges;
-    XLSX.utils.book_append_sheet(workbook, ws, sheet.name);
-  });
-
-  XLSX.writeFile(workbook, "Edited_Sheets.xlsx");
-};
-
-const handleDownload = () => {
+  const handleDownload = () => {
   const wb = XLSX.utils.book_new();
 
   sheets.forEach((sheet) => {
@@ -206,7 +207,114 @@ const handleDownload = () => {
   XLSX.writeFile(wb, "edited.xlsx");
 };
 
-const handleDownloadStyledXLSXbkp = async () => {
+const handleDownloadbkp2 = () => {
+  const wb = XLSX.utils.book_new();
+  sheets.forEach((sheet) => {
+    // Add Project Title and Description
+    const dataWithMeta = [
+      ["Project Title", "", "", "", ""],
+      ["Project Description", "", "", "", ""],
+      ...sheet.data,
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(dataWithMeta);
+
+    // Merge cells for Project Title (first row across 5 columns)
+    ws["!merges"] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }, // Merge A1:E1
+      { s: { r: 1, c: 0 }, e: { r: 1, c: 4 } }, // Merge A2:E2
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, sheet.name);
+  });
+  XLSX.writeFile(wb, "edited.xlsx");
+};
+
+const handleDownloadbkp4 = () => {
+  const wb = XLSX.utils.book_new();
+
+  sheets.forEach((sheet) => {
+    const ws = XLSX.utils.aoa_to_sheet([
+      ["AI-based Generative QA System"], // Project Title
+      ["Fine-tuned models for QA and email subject generation"], // Project Description
+      [],
+      ...sheet.data,
+    ]);
+
+    // Find number of columns to merge title row properly
+    const colCount = Math.max(...sheet.data.map((r) => r.length));
+
+    if (!ws["!merges"]) ws["!merges"] = [];
+
+    ws["!merges"].push({
+      s: { r: 0, c: 0 }, // start cell
+      e: { r: 0, c: colCount - 1 }, // end cell
+    });
+
+    XLSX.utils.book_append_sheet(wb, ws, sheet.name);
+  });
+
+  XLSX.writeFile(wb, "edited.xlsx");
+};
+
+
+const handleDownloadbkp1 = () => {
+  const wb = XLSX.utils.book_new();
+  sheets.forEach((sheet) => {
+    const ws = XLSX.utils.aoa_to_sheet([]);
+
+    // project title row with 2-colspan
+    XLSX.utils.sheet_add_aoa(ws, [["Project Title:", "AI-based Generative QA System"]], { origin: "A1" });
+    ws["!merges"] = ws["!merges"] || [];
+    ws["!merges"].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 1 } }); // merge A1:B1
+
+    // project description row with 2-colspan
+    XLSX.utils.sheet_add_aoa(ws, [["Project Description:", "Fine-tuned models for QA and email subject generation"]], { origin: "A2" });
+    ws["!merges"].push({ s: { r: 1, c: 0 }, e: { r: 1, c: 1 } }); // merge A2:B2
+
+    // push actual sheet data starting from row 4
+    XLSX.utils.sheet_add_aoa(ws, sheet.data, { origin: "A4" });
+
+    XLSX.utils.book_append_sheet(wb, ws, sheet.name);
+  });
+  XLSX.writeFile(wb, "edited.xlsx");
+};
+
+
+  const handleDownloadStyledXLSXbkp = async () => {
+    if (sheets.length === 0) return;
+
+    const workbook = new ExcelJS.Workbook();
+
+    sheets.forEach((sheet) => {
+      const ws = workbook.addWorksheet(sheet.name);
+
+      ws.properties.defaultRowHeight = 50;
+
+      sheet.data.forEach((row, rowIndex) => {
+        const newRow = ws.addRow(row);
+        newRow.height = 50;
+
+        row.forEach((_, colIndex) => {
+          const cell = newRow.getCell(colIndex + 1);
+          cell.alignment = { vertical: "middle", horizontal: "center" };
+          cell.font = { size: 12, name: "Arial" };
+          cell.border = {
+            top: { style: "thin" },
+            left: { style: "thin" },
+            bottom: { style: "thin" },
+            right: { style: "thin" },
+          };
+        });
+      });
+    });
+
+    const buf = await workbook.xlsx.writeBuffer();
+    saveAs(new Blob([buf]), "styled_edited.xlsx");
+  };
+
+
+  const handleDownloadStyledXLSXbkp1 = async () => {
   if (sheets.length === 0) return;
 
   const workbook = new ExcelJS.Workbook();
@@ -215,7 +323,7 @@ const handleDownloadStyledXLSXbkp = async () => {
     const ws = workbook.addWorksheet(sheet.name);
 
     // default row height for the whole sheet
-    ws.properties.defaultRowHeight = 60;
+    ws.properties.defaultRowHeight = 50;
 
     // 👉 Find max columns count
     const maxCols = Math.max(...sheet.data.map((row) => row.length));
@@ -242,18 +350,18 @@ const handleDownloadStyledXLSXbkp = async () => {
     });
 
     // 👉 Header row height
-    ws.getRow(1).height = 60;
+    ws.getRow(1).height = 50;
 
     // 👉 Column widths
     ws.columns = new Array(maxCols).fill({ width: 25 });
 
-    // 👉 Conditional formatting for "branch" column
+    // 👉 Conditional formatting for "Probability" column
     const headers = sheet.data[0];
-    const branchIndex = headers.findIndex(
+    const probabilityIndex = headers.findIndex(
       (h) => typeof h === "string" && h.toLowerCase() === "branch"
     );
-    if (branchIndex !== -1) {
-      ws.getColumn(branchIndex + 1).eachCell((cell, rowNumber) => {
+    if (probabilityIndex !== -1) {
+      ws.getColumn(probabilityIndex + 1).eachCell((cell, rowNumber) => {
         if (rowNumber === 1) return; // skip header
         const val = (cell.value || "").toString().toUpperCase();
         if (val === "A") {
@@ -269,35 +377,34 @@ const handleDownloadStyledXLSXbkp = async () => {
       });
     }
 
-    // 👉 Conditional formatting for "rating" column
-    const ratingIndex = headers.findIndex(
-      (h) => typeof h === "string" && h.toLowerCase() === "rating"
+    // 👉 Conditional formatting for "Impact" column
+    const impactIndex = headers.findIndex(
+      (h) => typeof h === "string" && h.toLowerCase() === "gender"
     );
-    if (ratingIndex !== -1) {
-      ws.getColumn(ratingIndex + 1).eachCell((cell, rowNumber) => {
+    if (impactIndex !== -1) {
+      ws.getColumn(impactIndex + 1).eachCell((cell, rowNumber) => {
         if (rowNumber === 1) return; // skip header
         const val = (cell.value || "").toString().toUpperCase();
-        if (val === "HIGH") {
+        if (val === "FEMALE") {
           cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFF0000" } }; // red
           cell.font = { color: { argb: "FFFFFFFF" } }; // white text
-        } else if (val === "MEDIUM") {
+        } else if (val === "MALE") {
           cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFFF00" } }; // yellow
-          cell.font = { color: { argb: "FF000000" } }; // black text
-        } else if (val === "LOW") {
-          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF00FF00" } }; // green
           cell.font = { color: { argb: "FF000000" } }; // black text
         }
       });
     }
 
     // Apply merges (ExcelJS is 1-indexed)
-    sheet.merges.forEach((merge) => {
-      const startRow = merge.s.r + 1;
-      const startCol = merge.s.c + 1;
-      const endRow = merge.e.r + 1;
-      const endCol = merge.e.c + 1;
-      ws.mergeCells(startRow, startCol, endRow, endCol);
-    });
+    if ((sheet as any).merges) {
+      (sheet as any).merges.forEach((merge: any) => {
+        const startRow = merge.s.r + 1;
+        const startCol = merge.s.c + 1;
+        const endRow = merge.e.r + 1;
+        const endCol = merge.e.c + 1;
+        ws.mergeCells(startRow, startCol, endRow, endCol);
+      });
+    }
   });
 
   // Generate XLSX blob
@@ -311,7 +418,8 @@ const handleDownloadStyledXLSXbkp = async () => {
   link.click();
 };
 
-const handleDownloadStyledXLSX_TitleTop = async () => {
+
+const handleDownloadStyledXLSXwr1 = async () => {
   if (sheets.length === 0) return;
 
   const workbook = new ExcelJS.Workbook();
@@ -369,6 +477,46 @@ const handleDownloadStyledXLSX_TitleTop = async () => {
 
     // 👉 Column widths
     ws.columns = new Array(maxCols).fill({ width: 25 });
+
+    // 👉 Conditional formatting for "Branch" column
+    const headers = sheet.data[0];
+    const probabilityIndex = headers.findIndex(
+      (h) => typeof h === "string" && h.toLowerCase() === "branch"
+    );
+    if (probabilityIndex !== -1) {
+      ws.getColumn(probabilityIndex + 1).eachCell((cell, rowNumber) => {
+        if (rowNumber === headerRowIndex) return; // skip header
+        const val = (cell.value || "").toString().toUpperCase();
+        if (val === "A") {
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFF0000" } };
+          cell.font = { color: { argb: "FFFFFFFF" } };
+        } else if (val === "B") {
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFFF00" } };
+          cell.font = { color: { argb: "FF000000" } };
+        } else if (val === "C") {
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF00FF00" } };
+          cell.font = { color: { argb: "FF000000" } };
+        }
+      });
+    }
+
+    // 👉 Conditional formatting for "Gender" column
+    const impactIndex = headers.findIndex(
+      (h) => typeof h === "string" && h.toLowerCase() === "gender"
+    );
+    if (impactIndex !== -1) {
+      ws.getColumn(impactIndex + 1).eachCell((cell, rowNumber) => {
+        if (rowNumber === headerRowIndex) return; // skip header
+        const val = (cell.value || "").toString().toUpperCase();
+        if (val === "FEMALE") {
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFF0000" } };
+          cell.font = { color: { argb: "FFFFFFFF" } };
+        } else if (val === "MALE") {
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFFF00" } };
+          cell.font = { color: { argb: "FF000000" } };
+        }
+      });
+    }
 
     // Apply merges (ExcelJS is 1-indexed)
     if ((sheet as any).merges) {
@@ -446,11 +594,11 @@ const handleDownloadStyledXLSX = async () => {
 
     // 👉 Conditional formatting for "Branch" column
     const headers = filteredData[0];
-    const branchIndex = headers.findIndex(
+    const probabilityIndex = headers.findIndex(
       (h) => typeof h === "string" && h.toLowerCase() === "branch"
     );
-    if (branchIndex !== -1) {
-      ws.getColumn(branchIndex + 1).eachCell((cell, rowNumber) => {
+    if (probabilityIndex !== -1) {
+      ws.getColumn(probabilityIndex + 1).eachCell((cell, rowNumber) => {
         if (rowNumber === headerRowIndex) return; // skip header
         const val = (cell.value || "").toString().toUpperCase();
         if (val === "A") {
@@ -467,11 +615,11 @@ const handleDownloadStyledXLSX = async () => {
     }
 
     // 👉 Conditional formatting for "Gender" column
-    const genderIndex = headers.findIndex(
+    const impactIndex = headers.findIndex(
       (h) => typeof h === "string" && h.toLowerCase() === "gender"
     );
-    if (genderIndex !== -1) {
-      ws.getColumn(genderIndex + 1).eachCell((cell, rowNumber) => {
+    if (impactIndex !== -1) {
+      ws.getColumn(impactIndex + 1).eachCell((cell, rowNumber) => {
         if (rowNumber === headerRowIndex) return; // skip header
         const val = (cell.value || "").toString().toUpperCase();
         if (val === "FEMALE") {
@@ -573,18 +721,22 @@ ws.mergeCells(spacerRow.number, 1, spacerRow.number, maxCols);
   link.click();
 };
 
+
+
+
+
   return (
     <main className="p-6">
-      <h1 className="text-2xl font-bold mb-4">XLSX Editor</h1>
+      <h1 className="text-2xl font-bold mb-4">📊 CSV Editor (Editable Risk Columns with Row Edit)</h1>
 
-      <input type="file" accept=".xlsx" onChange={handleFileUpload} 
-        className="mb-4 block w-full text-sm text-gray-900 file:mr-4 file:py-2 file:px-4 file:border file:border-gray-300 file:rounded-lg file:cursor-pointer file:bg-gray-50 file:focus:outline-none file:focus:ring-2 file:focus:ring-blue-500"
-       />
+      <input type="file" accept=".csv" onChange={handleFileUpload} className="mb-4" />
+
+      <br />
 
       <div className="mb-4 flex gap-2">
         <input
           type="text"
-          placeholder="Enter XLSX file URL"
+          placeholder="Enter CSV file URL"
           value={fileUrl}
           onChange={(e) => setFileUrl(e.target.value)}
           className="border p-2 rounded w-full"
@@ -607,9 +759,6 @@ ws.mergeCells(spacerRow.number, 1, spacerRow.number, maxCols);
                 onClick={() => {
                   setActiveSheet(idx);
                   convertSheetToJson(sheets[idx]);
-                  const headers = sheets[idx].data[0];
-                  const validEditableColumns = masterEditableColumns.filter((col) => headers.includes(col));
-                  setEditableColumns(validEditableColumns);
                 }}
                 className={`px-4 py-2 rounded ${
                   idx === activeSheet ? "bg-blue-600 text-white" : "bg-gray-200"
@@ -626,29 +775,10 @@ ws.mergeCells(spacerRow.number, 1, spacerRow.number, maxCols);
                 {sheets[activeSheet].data.map((row, rIdx) => {
                   const isHeader = rIdx === 0;
                   const headers = sheets[activeSheet].data[0];
-                  const renderedCells: Set<string> = new Set();
 
                   return (
                     <tr key={rIdx}>
                       {row.map((cell, cIdx) => {
-                        if (renderedCells.has(`${rIdx}-${cIdx}`)) return null;
-
-                        const merged = getMergedCell(rIdx, cIdx, sheets[activeSheet].merges);
-                        let rowSpan = 1;
-                        let colSpan = 1;
-
-                        if (merged && merged.topLeft) {
-                          rowSpan = merged.rowSpan ?? 1;
-                          colSpan = merged.colSpan ?? 1;
-                          for (let r = rIdx; r < rIdx + rowSpan; r++) {
-                            for (let c = cIdx; c < cIdx + colSpan; c++) {
-                              renderedCells.add(`${r}-${c}`);
-                            }
-                          }
-                        } else if (merged && !merged.topLeft) {
-                          return null;
-                        }
-
                         const headerName = headers[cIdx] as string;
                         const isEditable = !isHeader && editableColumns.includes(headerName);
                         const inEditMode = editingRow === rIdx;
@@ -657,13 +787,11 @@ ws.mergeCells(spacerRow.number, 1, spacerRow.number, maxCols);
                           <td
                             key={cIdx}
                             className={`border p-1 text-center ${isHeader ? "bg-gray-200 font-bold" : ""}`}
-                            rowSpan={rowSpan}
-                            colSpan={colSpan}
                           >
                             {isHeader ? (
                               cell
                             ) : inEditMode && isEditable ? (
-                              headerName === "Unit price" ? (
+                              headerName === "Unit price" || headerName === "Payment" || headerName === "Customer type" ? (
                                 <input
                                   type="text"
                                   className="w-full border-none p-1 focus:outline-none text-center"
@@ -672,7 +800,7 @@ ws.mergeCells(spacerRow.number, 1, spacerRow.number, maxCols);
                                     setTempRowData((prev) => ({ ...prev, [headerName]: e.target.value }))
                                   }
                                 />
-                              ) : headerName === "Product line" || headerName === "City" ? (
+                              ) : headerName === "Product line" ? (
                                 <textarea
                                   className="w-full border-none p-1 focus:outline-none"
                                   value={tempRowData[headerName] ?? ""}
@@ -680,26 +808,18 @@ ws.mergeCells(spacerRow.number, 1, spacerRow.number, maxCols);
                                     setTempRowData((prev) => ({ ...prev, [headerName]: e.target.value }))
                                   }
                                 />
-                              ) : headerName === "Customer type" ? (
+                              ) : headerName === "Branch" || headerName === "Impact" ? (
                                 <select
                                   className="w-full border-none p-1 focus:outline-none"
-                                  value={tempRowData[headerName] ?? "Member"}
+                                  value={tempRowData[headerName] ?? "A"}
                                   onChange={(e) =>
                                     setTempRowData((prev) => ({ ...prev, [headerName]: e.target.value }))
                                   }
                                 >
-                                  <option value="Member">Member</option>
-                                  <option value="Normal">Normal</option>
+                                  <option value="A">A</option>
+                                  <option value="B">B</option>
+                                  <option value="C">C</option>
                                 </select>
-                              ) : headerName === "Quantity" ? (
-                                  <input
-                                    type="number"
-                                    className="w-full border-none p-1 focus:outline-none text-center"
-                                    value={tempRowData[headerName] ?? ""}
-                                    onChange={(e) =>
-                                      setTempRowData((prev) => ({ ...prev, [headerName]: e.target.value }))
-                                    }
-                                  />
                               ) : headerName === "Gender" ? (
                                 <select
                                   className="w-full border-none p-1 focus:outline-none"
@@ -771,18 +891,19 @@ ws.mergeCells(spacerRow.number, 1, spacerRow.number, maxCols);
             >
               Download All JSON
             </button>
-            <button
-              className="mt-4 px-4 py-2 bg-green-600 text-white rounded"
-              onClick={handleDownload}
-            >
-              Download Edited XLSX
-            </button>
-            <button
-              className="mt-4 px-4 py-2 bg-green-600 text-white rounded"
-              onClick={handleDownloadStyledXLSX}
-            >
-              Download Styled Edited XLSX
-            </button>
+
+             <button
+            className="mt-4 px-4 py-2 bg-green-600 text-white rounded"
+            onClick={handleDownload}
+          >
+            Download Edited XLSX
+          </button>
+          <button
+            className="mt-4 ml-4 px-4 py-2 bg-green-600 text-white rounded"
+            onClick={handleDownloadStyledXLSX}
+          >
+            Download Styled Edited XLSX
+          </button>
           </div>
         </>
       )}

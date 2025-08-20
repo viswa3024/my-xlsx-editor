@@ -18,9 +18,9 @@ export default function Home() {
   const [tempRowData, setTempRowData] = useState<Record<string, any>>({});
   const [fileUrl, setFileUrl] = useState<string>("");
 
-  const [editableColumns, setEditableColumns] = useState<string[]>(["Product line", "Unit price", "Customer type", "City", "Gender", "Quantity"])
+  const [editableColumns, setEditableColumns] = useState<string[]>(["Product line", "Risk Description", "Probability", "Impact", "Response Plan"])
 
-  const masterEditableColumns = ["Product line", "Unit price", "Customer type", "City", "Gender", "Quantity"];
+  const masterEditableColumns = ["Product line", "Risk Description", "Probability", "Impact", "Response Plan"];
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -175,7 +175,7 @@ export default function Home() {
     setTempRowData({});
   };
 
-  const handleDownloadbkp = () => {
+  const handleDownload = () => {
   if (sheets.length === 0) return;
 
   const workbook = XLSX.utils.book_new();
@@ -186,24 +186,6 @@ export default function Home() {
   });
 
   XLSX.writeFile(workbook, "Edited_Sheets.xlsx");
-};
-
-const handleDownload = () => {
-  const wb = XLSX.utils.book_new();
-
-  sheets.forEach((sheet) => {
-    // Add Project Title & Description on top
-    const projectTitle = ["Project Title:", "AI-based Generative QA System"];
-    const projectDescription = ["Project Description:", "Fine-tuned models for QA and email subject generation"];
-
-    // Combine title, description, and actual sheet data
-    const newData = [projectTitle, projectDescription, [], ...sheet.data];
-
-    const ws = XLSX.utils.aoa_to_sheet(newData);
-    XLSX.utils.book_append_sheet(wb, ws, sheet.name);
-  });
-
-  XLSX.writeFile(wb, "edited.xlsx");
 };
 
 const handleDownloadStyledXLSXbkp = async () => {
@@ -247,34 +229,34 @@ const handleDownloadStyledXLSXbkp = async () => {
     // 👉 Column widths
     ws.columns = new Array(maxCols).fill({ width: 25 });
 
-    // 👉 Conditional formatting for "branch" column
+    // 👉 Conditional formatting for "Probability" column
     const headers = sheet.data[0];
-    const branchIndex = headers.findIndex(
-      (h) => typeof h === "string" && h.toLowerCase() === "branch"
+    const probabilityIndex = headers.findIndex(
+      (h) => typeof h === "string" && h.toLowerCase() === "probability"
     );
-    if (branchIndex !== -1) {
-      ws.getColumn(branchIndex + 1).eachCell((cell, rowNumber) => {
+    if (probabilityIndex !== -1) {
+      ws.getColumn(probabilityIndex + 1).eachCell((cell, rowNumber) => {
         if (rowNumber === 1) return; // skip header
         const val = (cell.value || "").toString().toUpperCase();
-        if (val === "A") {
+        if (val === "HIGH") {
           cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFF0000" } }; // red
           cell.font = { color: { argb: "FFFFFFFF" } }; // white text
-        } else if (val === "B") {
+        } else if (val === "MEDIUM") {
           cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFFF00" } }; // yellow
           cell.font = { color: { argb: "FF000000" } }; // black text
-        } else if (val === "C") {
+        } else if (val === "LOW") {
           cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF00FF00" } }; // green
           cell.font = { color: { argb: "FF000000" } }; // black text
         }
       });
     }
 
-    // 👉 Conditional formatting for "rating" column
-    const ratingIndex = headers.findIndex(
-      (h) => typeof h === "string" && h.toLowerCase() === "rating"
+    // 👉 Conditional formatting for "Impact" column
+    const impactIndex = headers.findIndex(
+      (h) => typeof h === "string" && h.toLowerCase() === "impact"
     );
-    if (ratingIndex !== -1) {
-      ws.getColumn(ratingIndex + 1).eachCell((cell, rowNumber) => {
+    if (impactIndex !== -1) {
+      ws.getColumn(impactIndex + 1).eachCell((cell, rowNumber) => {
         if (rowNumber === 1) return; // skip header
         const val = (cell.value || "").toString().toUpperCase();
         if (val === "HIGH") {
@@ -298,88 +280,6 @@ const handleDownloadStyledXLSXbkp = async () => {
       const endCol = merge.e.c + 1;
       ws.mergeCells(startRow, startCol, endRow, endCol);
     });
-  });
-
-  // Generate XLSX blob
-  const buffer = await workbook.xlsx.writeBuffer();
-  const blob = new Blob([buffer], {
-    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.setAttribute("download", "Edited_Styled_Sheets.xlsx");
-  link.click();
-};
-
-const handleDownloadStyledXLSX_TitleTop = async () => {
-  if (sheets.length === 0) return;
-
-  const workbook = new ExcelJS.Workbook();
-
-  sheets.forEach((sheet) => {
-    const ws = workbook.addWorksheet(sheet.name);
-
-    // 👉 Project Title
-    ws.addRow([`Project Title: My Sample Project`]);
-    ws.mergeCells(1, 1, 1, 5);
-    ws.getRow(1).font = { bold: true, size: 16, color: { argb: "FF000000" } };
-    ws.getRow(1).alignment = { vertical: "middle", horizontal: "center" };
-    ws.getRow(1).height = 30;
-
-    // 👉 Project Description
-    ws.addRow([`Project Description: This is a demo project description text`]);
-    ws.mergeCells(2, 1, 2, 5);
-    ws.getRow(2).font = { italic: true, size: 12, color: { argb: "FF333333" } };
-    ws.getRow(2).alignment = { vertical: "middle", horizontal: "center", wrapText: true };
-    ws.getRow(2).height = 40;
-
-    // Add an empty spacer row
-    ws.addRow([]);
-
-    // default row height for the whole sheet
-    ws.properties.defaultRowHeight = 50;
-
-    // 👉 Find max columns count
-    const maxCols = Math.max(...sheet.data.map((row) => row.length));
-
-    // Add rows with padding
-    sheet.data.forEach((row) => {
-      const normalizedRow = [...row];
-      while (normalizedRow.length < maxCols) {
-        normalizedRow.push(""); // pad empty cells
-      }
-      const addedRow = ws.addRow(normalizedRow);
-
-      // 👉 Apply wrap text for all row cells
-      addedRow.eachCell((cell) => {
-        cell.alignment = { vertical: "middle", horizontal: "left", wrapText: true };
-      });
-    });
-
-    // Apply header styles (row 4 because title+description+spacer used 3 rows)
-    const headerRowIndex = 4;
-    ws.getRow(headerRowIndex).eachCell((cell) => {
-      cell.font = { bold: true, color: { argb: "FFFFFFFF" } }; // white font
-      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1F77B4" } }; // blue background
-      cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
-    });
-
-    // 👉 Header row height
-    ws.getRow(headerRowIndex).height = 50;
-
-    // 👉 Column widths
-    ws.columns = new Array(maxCols).fill({ width: 25 });
-
-    // Apply merges (ExcelJS is 1-indexed)
-    if ((sheet as any).merges) {
-      (sheet as any).merges.forEach((merge: any) => {
-        const startRow = merge.s.r + 4; // shift merges because of 3 extra rows
-        const startCol = merge.s.c + 1;
-        const endRow = merge.e.r + 4;
-        const endCol = merge.e.c + 1;
-        ws.mergeCells(startRow, startCol, endRow, endCol);
-      });
-    }
   });
 
   // Generate XLSX blob
@@ -446,11 +346,11 @@ const handleDownloadStyledXLSX = async () => {
 
     // 👉 Conditional formatting for "Branch" column
     const headers = filteredData[0];
-    const branchIndex = headers.findIndex(
+    const probabilityIndex = headers.findIndex(
       (h) => typeof h === "string" && h.toLowerCase() === "branch"
     );
-    if (branchIndex !== -1) {
-      ws.getColumn(branchIndex + 1).eachCell((cell, rowNumber) => {
+    if (probabilityIndex !== -1) {
+      ws.getColumn(probabilityIndex + 1).eachCell((cell, rowNumber) => {
         if (rowNumber === headerRowIndex) return; // skip header
         const val = (cell.value || "").toString().toUpperCase();
         if (val === "A") {
@@ -467,11 +367,11 @@ const handleDownloadStyledXLSX = async () => {
     }
 
     // 👉 Conditional formatting for "Gender" column
-    const genderIndex = headers.findIndex(
+    const impactIndex = headers.findIndex(
       (h) => typeof h === "string" && h.toLowerCase() === "gender"
     );
-    if (genderIndex !== -1) {
-      ws.getColumn(genderIndex + 1).eachCell((cell, rowNumber) => {
+    if (impactIndex !== -1) {
+      ws.getColumn(impactIndex + 1).eachCell((cell, rowNumber) => {
         if (rowNumber === headerRowIndex) return; // skip header
         const val = (cell.value || "").toString().toUpperCase();
         if (val === "FEMALE") {
@@ -663,7 +563,7 @@ ws.mergeCells(spacerRow.number, 1, spacerRow.number, maxCols);
                             {isHeader ? (
                               cell
                             ) : inEditMode && isEditable ? (
-                              headerName === "Unit price" ? (
+                              headerName === "Product line" ? (
                                 <input
                                   type="text"
                                   className="w-full border-none p-1 focus:outline-none text-center"
@@ -672,7 +572,7 @@ ws.mergeCells(spacerRow.number, 1, spacerRow.number, maxCols);
                                     setTempRowData((prev) => ({ ...prev, [headerName]: e.target.value }))
                                   }
                                 />
-                              ) : headerName === "Product line" || headerName === "City" ? (
+                              ) : headerName === "Risk Description" ? (
                                 <textarea
                                   className="w-full border-none p-1 focus:outline-none"
                                   value={tempRowData[headerName] ?? ""}
@@ -680,36 +580,27 @@ ws.mergeCells(spacerRow.number, 1, spacerRow.number, maxCols);
                                     setTempRowData((prev) => ({ ...prev, [headerName]: e.target.value }))
                                   }
                                 />
-                              ) : headerName === "Customer type" ? (
+                              ) : headerName === "Probability" || headerName === "Impact" ? (
                                 <select
                                   className="w-full border-none p-1 focus:outline-none"
-                                  value={tempRowData[headerName] ?? "Member"}
+                                  value={tempRowData[headerName] ?? "Low"}
                                   onChange={(e) =>
                                     setTempRowData((prev) => ({ ...prev, [headerName]: e.target.value }))
                                   }
                                 >
-                                  <option value="Member">Member</option>
-                                  <option value="Normal">Normal</option>
+                                  <option value="High">High</option>
+                                  <option value="Low">Low</option>
                                 </select>
-                              ) : headerName === "Quantity" ? (
-                                  <input
-                                    type="number"
-                                    className="w-full border-none p-1 focus:outline-none text-center"
-                                    value={tempRowData[headerName] ?? ""}
-                                    onChange={(e) =>
-                                      setTempRowData((prev) => ({ ...prev, [headerName]: e.target.value }))
-                                    }
-                                  />
-                              ) : headerName === "Gender" ? (
+                              ) : headerName === "Response Plan" ? (
                                 <select
                                   className="w-full border-none p-1 focus:outline-none"
-                                  value={tempRowData[headerName] ?? "Female"}
+                                  value={tempRowData[headerName] ?? "FALSE"}
                                   onChange={(e) =>
                                     setTempRowData((prev) => ({ ...prev, [headerName]: e.target.value }))
                                   }
                                 >
-                                  <option value="Female">Female</option>
-                                  <option value="Male">Male</option>
+                                  <option value="TRUE">TRUE</option>
+                                  <option value="FALSE">FALSE</option>
                                 </select>
                               ) : (
                                 cell
