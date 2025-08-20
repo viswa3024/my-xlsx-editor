@@ -665,6 +665,89 @@ const headerWidths: Record<string, string> = {
 
           <div className="overflow-auto shadow-lg p-4 bg-white">
             <table className="min-w-full border-collapse">
+              {/* <thead>
+                <tr>
+                  <th colSpan={sheets[activeSheet].data[0]?.length || 1} className="p-2">
+                    <div className="flex space-x-2 mb-2">
+                      {sheets.map((sheet, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => {
+                            setActiveSheet(idx);
+                            convertSheetToJson(sheets[idx]);
+                            const headers = sheets[idx].data[0];
+                            const validEditableColumns = masterEditableColumns.filter((col) =>
+                              headers.includes(col)
+                            );
+                            setEditableColumns(validEditableColumns);
+                          }}
+                          className={`px-4 py-2 rounded ${
+                            idx === activeSheet ? "bg-blue-600 text-white" : "bg-gray-200"
+                          }`}
+                        >
+                          {sheet.name}
+                        </button>
+                      ))}
+                    </div>
+                  </th>
+                </tr>
+              </thead> */}
+
+              {/* <thead>
+    <tr>
+      {sheets.map((sheet, idx) => (
+        <th
+          key={idx}
+          onClick={() => {
+            setActiveSheet(idx);
+            convertSheetToJson(sheets[idx]);
+            const headers = sheets[idx].data[0];
+            const validEditableColumns = masterEditableColumns.filter((col) =>
+              headers.includes(col)
+            );
+            setEditableColumns(validEditableColumns);
+          }}
+          className={`px-4 py-2 cursor-pointer rounded-t ${
+            idx === activeSheet
+              ? "bg-blue-600 text-white"
+              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+          }`}
+        >
+          {sheet.name}
+        </th>
+      ))}
+    </tr>
+  </thead> */}
+
+  <thead className="mb-4">
+  <tr className="">
+    {sheets.map((sheet, idx) => (
+      <th
+        key={idx}
+        // colSpan={sheets[activeSheet]?.data[0]?.length || 1} // span full tbody width
+        colSpan={
+          Math.floor(
+            (sheets[activeSheet]?.data[0]?.length + 2 || 1) / sheets.length
+          )
+        }
+        className={`px-4 py-2 mx-1 cursor-pointer text-sm font-medium border-b-[4px] ${
+          idx === activeSheet ? "border-blue-600 text-blue-600" : "border-black-300 text-gray-600"
+        }`}
+        onClick={() => {
+          setActiveSheet(idx);
+          convertSheetToJson(sheets[idx]);
+          const headers = sheets[idx].data[0];
+          const validEditableColumns = masterEditableColumns.filter((col) =>
+            headers.includes(col)
+          );
+          setEditableColumns(validEditableColumns);
+        }}
+      >
+        {sheet.name}
+      </th>
+    ))}
+  </tr>
+</thead>
               <tbody>
                 {sheets[activeSheet].data.map((row, rIdx) => {
                   const isHeader = rIdx === 0;
@@ -720,7 +803,7 @@ const headerWidths: Record<string, string> = {
                               headerName === "Unit price" ? (
                                 <input
                                   type="text"
-                                  className="w-full border-none p-1 focus:outline-none text-center"
+                                  className="w-full border border-gray-300 rounded-md p-1 text-center shadow-sm placeholder-gray-400 focus:outline-none focus:ring-0"
                                   value={tempRowData[headerName] ?? ""}
                                   onChange={(e) =>
                                     setTempRowData((prev) => ({ ...prev, [headerName]: e.target.value }))
@@ -728,7 +811,20 @@ const headerWidths: Record<string, string> = {
                                 />
                               ) : headerName === "Product line" || headerName === "City" ? (
                                 <textarea
-                                  className="w-full border-none p-1 focus:outline-none"
+                                //resize-none focus:border-none 
+                                  className="
+                                    w-full 
+                                    border 
+                                    border-gray-300 
+                                    rounded-md 
+                                    p-2 
+                                    text-sm 
+                                    text-gray-800 
+                                    bg-white 
+                                    focus:outline-none 
+                                    focus:ring-0
+                                  "
+                                  rows={2}
                                   value={tempRowData[headerName] ?? ""}
                                   onChange={(e) =>
                                     setTempRowData((prev) => ({ ...prev, [headerName]: e.target.value }))
@@ -736,7 +832,8 @@ const headerWidths: Record<string, string> = {
                                 />
                               ) : headerName === "Customer type" ? (
                                 <select
-                                  className="w-full border-none p-1 focus:outline-none"
+                                  className="w-full p-2 border border-gray-300 rounded-md bg-white text-gray-700 shadow-sm 
+                                    focus:outline-none focus:ring-0  transition cursor-pointer"
                                   value={tempRowData[headerName] ?? "Member"}
                                   onChange={(e) =>
                                     setTempRowData((prev) => ({ ...prev, [headerName]: e.target.value }))
@@ -748,7 +845,7 @@ const headerWidths: Record<string, string> = {
                               ) : headerName === "Quantity" ? (
                                   <input
                                     type="number"
-                                    className="w-full border-none p-1 focus:outline-none text-center"
+                                    className="w-full border border-gray-300 rounded-md p-1 text-center shadow-sm placeholder-gray-400 focus:outline-none focus:ring-0"
                                     value={tempRowData[headerName] ?? ""}
                                     onChange={(e) =>
                                       setTempRowData((prev) => ({ ...prev, [headerName]: e.target.value }))
@@ -756,7 +853,8 @@ const headerWidths: Record<string, string> = {
                                   />
                               ) : headerName === "Gender" ? (
                                 <select
-                                  className="w-full border-none p-1 focus:outline-none"
+                                   className="w-full p-2 border border-gray-300 rounded-md bg-white text-gray-700 shadow-sm 
+               focus:outline-none focus:ring-0  transition cursor-pointer"
                                   value={tempRowData[headerName] ?? "Female"}
                                   onChange={(e) =>
                                     setTempRowData((prev) => ({ ...prev, [headerName]: e.target.value }))
