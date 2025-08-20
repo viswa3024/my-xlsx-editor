@@ -12,9 +12,11 @@
     "exceljs": "^4.4.0",
     "file-saver": "^2.0.5",
     "jszip": "^3.10.1",
+    "lucide-react": "^0.540.0",
     "next": "15.4.7",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "react-icons": "^5.5.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import * as XLSX from "xlsx";
 import ExcelJS from "exceljs";
+import { CreditCard } from "lucide-react";  
 
 type SheetData = {
   name: string;
@@ -742,7 +743,14 @@ ws.mergeCells(spacerRow.number, 1, spacerRow.number, maxCols);
                             rowSpan={rowSpan}
                             colSpan={colSpan}
                           >
-                            {cell}
+                            {/* {cell} */}
+                            {isHeader ? (
+                                  <div className="inline-flex items-center justify-center w-10 h-10 bg-blue-200 rounded-full mx-auto">
+                                    <CreditCard className="text-blue-600 w-5 h-5" />
+                                  </div>
+                                ) : (
+                                  cell
+                                )}
                           </td>
                         );
                       })()}
