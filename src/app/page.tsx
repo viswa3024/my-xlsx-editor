@@ -3,7 +3,7 @@
 import { useState } from "react";
 import * as XLSX from "xlsx";
 import ExcelJS from "exceljs";
-import { CreditCard } from "lucide-react";  
+import { CreditCard, Save, Edit, X } from "lucide-react";  
 
 type SheetData = {
   name: string;
@@ -850,25 +850,31 @@ const headerWidths: Record<string, string> = {
                           ? "Edit Changes"
                           : editingRow === rIdx ? (
                               <>
+                              <div className="flex gap-[8px] justify-center items-center">
                                 <button
-                                  className="px-2 py-1 bg-green-500 text-white rounded mr-1"
+                                  className="py-1 cursor-pointer"
                                   onClick={() => saveRow(rIdx)}
                                 >
-                                  Save
+                                  {/* <Save size={16} /> */}
+                                  <Save size={20} className="text-green-500 hover:text-green-700" />
                                 </button>
                                 <button
-                                  className="px-2 py-1 bg-red-500 text-white rounded"
+                                  className="py-1 cursor-pointer"
                                   onClick={closeEdit}
                                 >
-                                  Close
+                                  {/* <X size={16} /> */} {/* Close icon */}
+                                  <X size={20} className="text-red-500 hover:text-red-700" />
                                 </button>
+                              </div>
+                                
                               </>
                             ) : (
                               <button
-                                className="px-2 py-1 bg-blue-600 text-white rounded"
+                                className="px-2 py-1 cursor-pointer"
                                 onClick={() => startEditRow(rIdx)}
                               >
-                                Edit
+                                {/* <Edit size={16} />  */}
+                                <Edit size={20} className="text-blue-600 hover:text-blue-800" />
                               </button>
                             )}
                       </td>
